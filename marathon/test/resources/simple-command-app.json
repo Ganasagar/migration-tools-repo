@@ -1,0 +1,9 @@
+[{
+  "id": "/sleep",
+  "cmd": "sleep 3600",
+  "cpus": 0.01,
+  "instances": 10,
+  "maxLaunchDelaySeconds": 300,
+  "mem": 64
+}
+]

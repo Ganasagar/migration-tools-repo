@@ -1,0 +1,27 @@
+{
+  "id": "some-test-job",
+  "description": "Some description",
+  "labels": {
+    "PGPASSWORD": "you_thought_so?"
+  },
+  "run": {
+    "cmd": "/bin/sh somescript.sh > test.sql",
+    "cpus": 1,
+    "gpus": 0,
+    "disk": 0,
+    "docker": {
+      "image": "alpine",
+      "forcePullImage": false,
+      "privileged": false
+    },
+    "maxLaunchDelay": 3600,
+    "mem": 32,
+    "placement": {
+      "constraints": []
+    },
+    "taskKillGracePeriodSeconds": 0,
+    "restart": {
+      "policy": "NEVER"
+    }
+  }
+}

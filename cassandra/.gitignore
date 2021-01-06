@@ -1,0 +1,11 @@
+### VisualStudioCode ###
+.vscode/*
+
+### Default Generated Output Directory ###
+cassandra_home/*
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+scripts/__pycache__/
+scripts/*.py[cod]
+scripts/*$py.class

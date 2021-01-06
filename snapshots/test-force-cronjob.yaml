@@ -1,0 +1,31 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+spec:
+  jobTemplate:
+    metadata:
+      annotations:
+        description: Some description
+      labels:
+        PGPASSWORD: you_thought_so?
+      name: some-test-job
+    spec:
+      template:
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - -c
+            - /bin/sh somescript.sh > test.sql
+            image: alpine
+            imagePullPolicy: IfNotPresent
+            name: some-test-job
+            resources:
+              limits:
+                cpu: 1
+                memory: 32Mi
+            securityContext:
+              privileged: false
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 0
+  schedule: '* * * * *'
+  suspend: true

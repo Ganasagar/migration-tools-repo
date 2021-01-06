@@ -1,0 +1,33 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: some-test-cronjob
+spec:
+  concurrencyPolicy: Allow
+  jobTemplate:
+    metadata:
+      annotations:
+        description: Some cronjob
+      name: some-test-cronjob
+    spec:
+      template:
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - -c
+            - sleep 100
+            image: alpine
+            imagePullPolicy: IfNotPresent
+            name: some-test-cronjob
+            resources:
+              limits:
+                cpu: 1
+                memory: 32Mi
+            securityContext:
+              privileged: false
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 0
+  schedule: '* * * * *'
+  startingDeadlineSeconds: 3600
+  suspend: true

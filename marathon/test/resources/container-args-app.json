@@ -1,0 +1,15 @@
+[
+  {
+    "id": "args",
+    "container": {
+      "type" : "DOCKER",
+      "docker": {
+        "image": "d2iq/entrypoint"
+      }
+    },
+    "args": ["args", "passed", "to", "entrypoint"],
+    "cpus": 0.2,
+    "mem": 32.0,
+    "instances": 2
+  }
+]

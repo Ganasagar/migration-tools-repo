@@ -1,0 +1,35 @@
+{
+  "id": "some-test-cronjob",
+  "description": "Some cronjob",
+  "run": {
+    "cmd": "sleep 100",
+    "cpus": 1,
+    "gpus": 0,
+    "disk": 0,
+    "docker": {
+      "image": "alpine",
+      "forcePullImage": false,
+      "privileged": false
+    },
+    "maxLaunchDelay": 3600,
+    "mem": 32,
+    "placement": {
+      "constraints": []
+    },
+    "taskKillGracePeriodSeconds": 0,
+    "restart": {
+      "policy": "NEVER"
+    }
+  },
+  "schedules": [
+    {
+      "id": "default",
+      "cron": "* * * * *",
+      "timeZone": "America/Los_Angeles",
+      "startingDeadlineSeconds": 3600,
+      "concurrencyPolicy": "ALLOW",
+      "enabled": false,
+      "nextRunAt": "2020-12-16T08:00:00.000+0000"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+git+https://github.com/dcos/dcos-e2e.git@2020.08.14.0
+git+https://github.com/dcos/dcos-test-utils.git@f45f0938582fc166354a96c80ead0ea716adf3f3
+retrying==1.3.3
