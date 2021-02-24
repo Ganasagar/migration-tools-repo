@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e -x
+
+VERSION=$(./version)
+
+SED=$(which gsed sed | head -n 1)
+
+export PYTHON_VERSION=$(cat .python-version)
+
+# CI docker is old and doesn't support build-args for FROM. As a workaround, we use SED to pre-process
+cat Dockerfile | $SED -e '/ARG PYTHON_VERSION/d' -e "s/\$PYTHON_VERSION/$PYTHON_VERSION/" > Dockerfile.tmp
+
+docker build -f Dockerfile.tmp -t mesosphere/dcos-migration:${VERSION} .
+
+docker run --rm -i --entrypoint bash mesosphere/dcos-migration:${VERSION} -c \
+       "python -m pipenv install -d --system && PIPENV_ACTIVE=1 make ci"
+
+echo Success

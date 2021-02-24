@@ -1,0 +1,12 @@
+{
+  "id": "group1/predictionio-server",
+  "container": {
+    "docker": {
+      "image": "tobilg/mini-webserver"
+    },
+    "type": "DOCKER"
+  },
+  "cpus": 0.2,
+  "mem": 128,
+  "instances": 1
+}

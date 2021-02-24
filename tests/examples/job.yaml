@@ -1,0 +1,70 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  annotations:
+    migration.dcos.d2iq.com/cluster-id: test-1234-test-test
+    migration.dcos.d2iq.com/cluster-name: testcluster
+    migration.dcos.d2iq.com/backup-date: '2021-01-25'
+    migration.dcos.d2iq.com/description: test description
+    migration.dcos.d2iq.com/label/FOO: BAR
+  name: hello-world
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - args:
+            - wef
+            command:
+            - /bin/sh
+            - -c
+            - echo "hello world"
+            env:
+            - name: MyVAR
+              valueFrom:
+                secretKeyRef:
+                  key: mySecret
+                  name: TODO_ref
+            - name: envKey
+              value: envVal
+            image: alpine
+            imagePullPolicy: Always
+            name: hello-world
+            resources:
+              limits:
+                cpu: 1
+                nvidia.com/gpu: 0
+                memory: 128Mi
+              requests:
+                nvidia.com/gpu: 0
+            volumeMounts:
+            - name: fetch-artifacts
+              mountPath: /work
+          initContainers:
+          - name: fetch
+            image: bash:5.0
+            command:
+            - bash
+            - -c
+            - 'set -x
+
+              set -e
+
+              FETCH_PID_ARRAY=()
+
+              ( wget -O "artifact.com" "http://artifact.com" && chmod a+x "artifact.com"
+              ) & FETCH_PID_ARRAY+=("$!")
+
+              for pid in ${FETCH_PID_ARRAY[@]}; do wait $pid || exit $?; done'
+            volumeMounts:
+            - name: fetch-artifacts
+              mountPath: /fetch-artifacts
+            workingDir: /fetch_artifacts
+          restartPolicy: Never
+          volumes:
+          - name: fetch-artifacts
+            emptyDir: {}
+  schedule: '*/5 * * * *'
+  suspend: false

@@ -1,0 +1,27 @@
+{
+    "apiVersion": "V2",
+    "name": "framework-pool",
+    "count": 1,
+    "haproxy": {
+        "frontends": [{
+            "bindPort": 1025,
+            "protocol": "TCP",
+            "linkBackend": {
+                "defaultBackend": "stats-backend"
+            }
+        }],
+        "backends": [{
+            "name": "stats-backend",
+            "protocol": "TCP",
+            "services": [{
+                "mesos": {
+                    "frameworkNamePattern": "dcos-edgelb/pools/framework-pool.*",
+                    "taskNamePattern": ".*edgelb.*"
+                },
+                "endpoint": {
+                    "port": 9090
+                }
+            }]
+        }]
+    }
+}

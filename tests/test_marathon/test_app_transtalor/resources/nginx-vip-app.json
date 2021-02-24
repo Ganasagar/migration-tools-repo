@@ -1,0 +1,39 @@
+{
+  "id": "nginx",
+  "instances": 2,
+  "cpus": 1.0,
+  "mem": 256,
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "forcePullImage": true,
+      "image": "nginx:1.14.2",
+      "parameters": [],
+      "privileged": false
+    },
+    "portMappings": [{
+      "name": "http",
+      "hostPort": 0,
+      "containerPort": 80,
+      "labels": {
+        "VIP_0": "nginx:80"
+      }
+    },{
+      "name": "https",
+      "hostPort": 0,
+      "containerPort": 443,
+      "labels": {
+        "VIP_0": "nginx:443"
+      }
+    }]
+  },
+  "healthChecks": [{
+    "path": "/",
+    "portIndex": 0,
+    "protocol": "MESOS_HTTP",
+    "gracePeriodSeconds": 300,
+    "intervalSeconds": 60,
+    "timeoutSeconds": 20,
+    "maxConsecutiveFailures": 3
+  }]
+}

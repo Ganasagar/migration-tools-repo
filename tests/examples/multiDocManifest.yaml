@@ -1,0 +1,35 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  annotations:
+    migration.dcos.d2iq.com/cluster-id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    migration.dcos.d2iq.com/cluster-name: master
+    migration.dcos.d2iq.com/backup-date: '2021-01-19'
+    migration.dcos.d2iq.com/description: test description
+  name: hello-world
+spec:
+  jobTemplate:
+    spec:
+      template:
+        containers:
+        - name: hello-world
+          resources:
+            limits:
+              cpu: 1
+              memory: 128Mi
+  schedule: '* * * * *'
+  suspend: true
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    migration.dcos.d2iq.com/cluster-id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    migration.dcos.d2iq.com/cluster-name: master
+    migration.dcos.d2iq.com/backup-date: '2021-01-18'
+    migration.dcos.d2iq.com/secrets/secretpath: secret1
+  name: secret1
+data:
+  secret1: Zm9vYmFy

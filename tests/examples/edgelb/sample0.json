@@ -1,0 +1,96 @@
+{
+  "autoCertificate": true,
+  "apiVersion": "V2",
+  "constraints": "hostname:UNIQUE",
+  "count": 1,
+  "cpus": 0.9,
+  "cpusAdminOverhead": 0.1,
+  "disk": 256,
+  "haproxy": {
+    "backends": [
+      {
+        "balance": "roundrobin",
+        "miscStrs": [],
+        "name": "nginx",
+        "protocol": "HTTP",
+        "rewriteHttp": {
+          "request": {
+            "forwardfor": true,
+            "rewritePath": true,
+            "setHostHeader": true,
+            "xForwardedPort": true,
+            "xForwardedProtoHttpsIfTls": true
+          },
+          "response": {
+            "rewriteLocation": true
+          }
+        },
+        "services": [
+          {
+            "endpoint": {
+              "check": {
+                "enabled": true
+              },
+              "port": -1,
+              "portName": "web",
+              "type": "AUTO_IP"
+            },
+            "marathon": {
+              "serviceID": "/nginx"
+            },
+            "mesos": {}
+          }
+        ]
+      }
+    ],
+    "frontends": [
+      {
+        "bindAddress": "0.0.0.0",
+        "bindPort": 443,
+        "certificates": [
+          "$AUTOCERT"
+        ],
+        "linkBackend": {
+          "defaultBackend": "nginx",
+          "map": []
+        },
+        "miscStrs": [],
+        "name": "frontend_0.0.0.0_443",
+        "protocol": "HTTPS"
+      },
+      {
+        "bindAddress": "0.0.0.0",
+        "bindPort": 1026,
+        "certificates": [
+          "$AUTOCERT"
+        ],
+        "linkBackend": {
+          "defaultBackend": "nginx",
+          "map": []
+        },
+        "miscStrs": [],
+        "name": "frontend_0.0.0.0_1026",
+        "protocol": "HTTPS"
+      }
+    ],
+    "stats": {
+      "bindAddress": "0.0.0.0",
+      "bindPort": 9091
+    }
+  },
+  "mem": 992,
+  "memAdminOverhead": 32,
+  "name": "sample0",
+  "namespace": "dcos-edgelb/pools",
+  "packageName": "edgelb-pool",
+  "packageVersion": "v1.7.0",
+  "poolHealthcheckGracePeriod": 180,
+  "poolHealthcheckInterval": 12,
+  "poolHealthcheckMaxFail": 5,
+  "poolHealthcheckTimeout": 60,
+  "ports": [],
+  "role": "slave_public",
+  "secrets": [],
+  "type": "static",
+  "virtualNetworks": []
+}

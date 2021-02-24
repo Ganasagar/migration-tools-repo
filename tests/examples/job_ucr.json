@@ -1,0 +1,17 @@
+{
+  "id": "hello world",
+  "description": "desc",
+  "run": {
+    "cpus": 1,
+    "disk": 0,
+    "mem": 128,
+    "ucr": {
+      "image": {
+        "id": "alpine",
+        "kind": "docker",
+        "forcePull": true
+      }
+    },
+    "cmd": "awef"
+  }
+}

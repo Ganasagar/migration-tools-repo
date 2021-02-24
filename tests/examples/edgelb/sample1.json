@@ -1,0 +1,87 @@
+{
+  "autoCertificate": true,
+  "apiVersion": "V2",
+  "constraints": "hostname:UNIQUE",
+  "count": 1,
+  "cpus": 0.9,
+  "cpusAdminOverhead": 0.1,
+  "disk": 256,
+  "haproxy": {
+    "backends": [
+      {
+        "balance": "roundrobin",
+        "miscStrs": [],
+        "name": "first",
+        "protocol": "HTTP",
+        "rewriteHttp": {
+          "request": {
+            "forwardfor": true,
+            "rewritePath": true,
+            "setHostHeader": true,
+            "xForwardedPort": true,
+            "xForwardedProtoHttpsIfTls": true
+          },
+          "response": {
+            "rewriteLocation": true
+          }
+        },
+        "services": [
+          {
+            "endpoint": {
+              "check": {
+                "enabled": true
+              },
+              "port": -1,
+              "portName": "id",
+              "type": "AUTO_IP"
+            },
+            "marathon": {},
+            "mesos": {
+              "frameworkID": "bd4c3cca-2e65-47b6-9846-1169e069f339-0001",
+              "taskID": "nginx.instance-a4d15847-455d-11eb-a670-f624ba957830._app.1"
+            }
+          }
+        ]
+      }
+    ],
+    "frontends": [
+      {
+        "bindAddress": "0.0.0.0",
+        "bindPort": 443,
+        "certificates": [
+          "$AUTOCERT"
+        ],
+        "linkBackend": {
+          "map": [
+            {
+              "backend": "first",
+              "pathBeg": "/"
+            }
+          ]
+        },
+        "miscStrs": [],
+        "name": "frontend_0.0.0.0_443",
+        "protocol": "HTTPS"
+      }
+    ],
+    "stats": {
+      "bindAddress": "0.0.0.0",
+      "bindPort": 0
+    }
+  },
+  "mem": 992,
+  "memAdminOverhead": 32,
+  "name": "sample1",
+  "namespace": "dcos-edgelb/pools",
+  "packageName": "edgelb-pool",
+  "packageVersion": "v1.7.0",
+  "poolHealthcheckGracePeriod": 180,
+  "poolHealthcheckInterval": 12,
+  "poolHealthcheckMaxFail": 5,
+  "poolHealthcheckTimeout": 60,
+  "ports": [],
+  "role": "slave_public",
+  "secrets": [],
+  "type": "template-static",
+  "virtualNetworks": []
+}

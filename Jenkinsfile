@@ -6,30 +6,19 @@ def aws_id = string(credentialsId: "1ddc25d8-0873-4b6f-949a-ae803b074e7a", varia
 def aws_key = string(credentialsId: "875cfce9-90ca-4174-8720-816b4cb7f10f", variable: "AWS_SECRET_ACCESS_KEY")
 
 pipeline {
-  agent {
-    dockerfile true
+  agent none
+  environment {
+    DCOS_LICENSE = credentials('8667643a-6ad9-426e-b761-27b4226983ea')
+    DCOS_EE_URL = credentials('0b513aad-e0e0-4a82-95f4-309a80a02ff9')
   }
   stages {
-    stage("Unit Test") {
-      parallel {
-        stage("Marathon") {
-          steps {
-            // don't know why yet, but the runtime on CI does some magic with virtualenvs and as a quickfix we put a seemingly redundant `pipenv install` here.
-            sh 'pipenv install && cd marathon && pipenv run pytest'
-          }
-        }
-        stage("Metronome") {
-          steps {
-            // don't know why yet, but the runtime on CI does some magic with virtualenvs and as a quickfix we put a seemingly redundant `pipenv install` here.
-            sh 'pipenv install && pipenv run pytest --doctest-modules metronome'
-          }
-        }
+    stage("ci") {
+      agent {
+        label "mesos"
+      }
+      steps {
+        sh 'bin/ci'
       }
     }
-
-    // stage("Integration Test") {
-    //   TODO: cluster-setup
-    //   sh 'cd tests && ./run-tests.sh'
-    // }
   }
 }

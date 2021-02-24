@@ -1,0 +1,58 @@
+{
+  "apiVersion": "V2",
+  "name": "test-http-pool",
+  "count": 1,
+  "haproxy": {
+    "frontends": [
+      {
+        "bindPort": 80,
+        "protocol": "HTTP",
+        "linkBackend": {
+          "defaultBackend": "bridge-nginx",
+          "map": [
+            {
+              "pathBeg": "/httpd/",
+              "backend": "host-httpd"
+            }
+          ]
+        }
+      }
+    ],
+    "backends": [
+      {
+        "name": "host-httpd",
+        "protocol": "HTTP",
+        "rewriteHttp": {
+          "path": {
+            "fromPath": "/httpd/",
+            "toPath": "/"
+          }
+        },
+        "services": [
+          {
+            "marathon": {
+              "serviceID": "/host-httpd"
+            },
+            "endpoint": {
+              "portName": "web"
+            }
+          }
+        ]
+      },
+      {
+        "name": "bridge-nginx",
+        "protocol": "HTTP",
+        "services": [
+          {
+            "marathon": {
+              "serviceID": "/bridge-nginx"
+            },
+            "endpoint": {
+              "portName": "web"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

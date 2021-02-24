@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# Version script for dcos-migration
+#
+# Change MINOR to x+1 and BRANCH_POINT to commit hash of common ancestor of master and releases/1.x
+# after a releases/1.x was cut
+MAJOR=0
+MINOR=1
+BRANCH_POINT=d6ce4319ab6659237faf1fa07850d14274c73ab0
+REF=HEAD
+
+declare -a OTHERARGS
+help() {
+  cat <<-EOF
+Usage $0 [options]
+
+  --help This help
+  --ref  The reference for which version to output Defaults to HEAD
+
+Non-arg params
+
+* commit - output just the formatted commit hash
+* version - output just the version, without the hash
+* package - output the version with the commit hash, ie 1.9.34-a122edcb4
+
+EOF
+}
+
+while ! [ -z "$1" ]; do
+  arg="$1"
+  shift
+  case "$arg" in
+    --help)
+      help
+      exit 0
+      ;;
+    --ref)
+      REF="$1"
+      shift
+      ;;
+    *)
+      OTHERARGS+=("$arg")
+      ;;
+  esac
+done
+
+# Infer version
+# Number of commits since branch point
+COMMIT_NUMBER="$(git rev-list --count --first-parent $BRANCH_POINT..$REF)"
+COMMIT_HASH=$(git rev-parse --short $REF)
+
+case ${OTHERARGS[0]} in
+  commit)
+    # Echo commit hash
+    echo "$COMMIT_HASH"
+    ;;
+  version)
+    # Echo package version plus hash
+    echo "$MAJOR.$MINOR.$COMMIT_NUMBER"
+    ;;
+  "" | package)
+    # Echo package version plus hash
+    echo "$MAJOR.$MINOR.$COMMIT_NUMBER-$COMMIT_HASH"
+    ;;
+  *)
+    echo "ERROR: ${OTHERARGS[0]} is not a version format"
+    echo
+    help
+    exit 1
+    ;;
+
+
+esac

@@ -1,0 +1,30 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  annotations:
+    migration.dcos.d2iq.com/cluster-id: test-1234-test-test
+    migration.dcos.d2iq.com/cluster-name: testcluster
+    migration.dcos.d2iq.com/backup-date: '2021-01-25'
+    migration.dcos.d2iq.com/description: desc
+  name: hello_world
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - -c
+            - awef
+            image: alpine
+            imagePullPolicy: Always
+            name: hello_world
+            resources:
+              limits:
+                cpu: 1
+                memory: 128Mi
+              requests: {}
+  schedule: '* * * * *'
+  suspend: true

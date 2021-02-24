@@ -1,0 +1,72 @@
+{
+  "id": "hello-world",
+  "description": "test description",
+  "dependencies": [],
+  "labels": {
+    "FOO": "BAR"
+  },
+  "run": {
+    "cpus": 1,
+    "mem": 128,
+    "disk": 0,
+    "gpus": 0,
+    "cmd": "echo \"hello world\"",
+    "args": ["wef"],
+    "placement": {
+      "constraints": []
+    },
+    "maxLaunchDelay": 3600,
+    "restart": {
+      "policy": "NEVER"
+    },
+    "networks": [],
+    "artifacts": [
+      {
+        "uri": "http://artifact.com",
+        "extract": true,
+        "cache": true,
+        "executable": true
+      }
+    ],
+    "docker": {
+      "image": "alpine",
+      "forcePullImage": true,
+      "privileged": true,
+      "parameters": [
+        {
+          "key": "wef",
+          "value": "wef"
+        }
+      ]
+    },
+    "volumes": [
+      {
+        "containerPath": "container_path",
+        "hostPath": "/host_path",
+        "mode": "RW"
+      }
+    ],
+    "taskKillGracePeriodSeconds": 123,
+    "user": "user1"
+  },
+  "secrets": {
+    "secret0": {
+      "source": "mySecret"
+    }
+  },
+  "env": {
+    "MyVAR": {
+      "secret": "secret0"
+    },
+    "envKey": "envVal"
+  },
+  "schedules": [{
+    "id": "5min",
+    "cron": "*/5 * * * *",
+    "timezone": "UTC",
+    "startingDeadlineSeconds": 900,
+    "concurrencyPolicy": "ALLOW",
+    "enabled": true,
+    "nextRunAt": "2021-01-14T12:15:00.000+0000"
+  }]
+}
