@@ -4,25 +4,25 @@ from typing import Any, Dict
 
 class Backup(object):
     """docstring for Backup."""
-
-    def __init__(
-        self, pluginName: str, backupName: str, data: Dict[str, Any] = {}, extension: str = 'json'
-    ):
+    def __init__(self, pluginName: str, backupName: str, data: Dict[str, Any] = {}, extension: str = 'json'):
         super(Backup, self).__init__()
         self._plugin_name = pluginName
         if "/" in backupName:
-            raise AttributeError(
-                "backupName {} contains not allowed '/'".format(backupName))
+            raise AttributeError("backupName {} contains not allowed '/'".format(backupName))
         self._name = backupName
         self._data = data
         self._extension = extension
-        self._serializer = json.dumps
+        self._serializer = self.dump_pretty
         self._deserializer = json.loads
 
     @staticmethod
     def renderBackupName(name: str) -> str:
         # replace path with dashes
         return "-".join(list(filter(None, name.split("/"))))
+
+    @staticmethod
+    def dump_pretty(obj: Any, **kwargs: Any) -> str:
+        return json.dumps(obj, indent=4, **kwargs)
 
     @property
     def plugin_name(self) -> str:

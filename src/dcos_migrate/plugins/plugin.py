@@ -68,9 +68,7 @@ class MigratePlugin(object):
         """
         pass
 
-    def migrate(
-        self, backupList: BackupList, manifestList: ManifestList, **kwargs: Any
-    ) -> ManifestList:
+    def migrate(self, backupList: BackupList, manifestList: ManifestList, **kwargs: Any) -> ManifestList:
         """
         migrate gets the complete list of backups BackupList and the list of all
         previously made Manifests in ManifestList.
@@ -79,8 +77,8 @@ class MigratePlugin(object):
         """
         pass
 
-    def migrate_data(
-            self, backupList: BackupList, manifestList: ManifestList, backupFolder: str, migrateFolder: str, **kwargs: Any) -> None:
+    def migrate_data(self, backupList: BackupList, manifestList: ManifestList, backupFolder: str, migrateFolder: str,
+                     **kwargs: Any) -> None:
         """
         migrate_data gets the backupList, ManifestList, backupFolder and a folder path.
         The data functions are less restrictive about the actual data in and outputs due to

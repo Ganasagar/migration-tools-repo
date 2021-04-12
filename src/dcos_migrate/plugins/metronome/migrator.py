@@ -1,41 +1,27 @@
 from dcos_migrate.system import Migrator, Manifest
+import dcos_migrate.utils as utils
 import kubernetes.client.models as K  # type: ignore
 import json
 import os
 import typing as T
 
-
-EXTRACT_COMMAND = dict(
-    [(".zip", "unzip")]
-    + [
-        (ext, "tar -xf")
-        for ext in [".tgz", ".tar.gz", ".tbz2", ".tar.bz2", ".txz", ".tar.xz"]
-    ]
-)
+EXTRACT_COMMAND = dict([(".zip", "unzip")] + [(ext, "tar -xf")
+                                              for ext in [".tgz", ".tar.gz", ".tbz2", ".tar.bz2", ".txz", ".tar.xz"]])
 
 
 def generate_fetch_command(uri: str, allow_extract: bool, executable: bool) -> str:
     # NOTE: The path separator is always '/', even on Windows.
     _, _, filename = uri.rpartition("/")
     _, ext = os.path.splitext(filename)
-    postprocess = (
-        "chmod a+x"
-        if executable
-        else (EXTRACT_COMMAND.get(ext, "") if allow_extract else "")
-    )
+    postprocess = ("chmod a+x" if executable else (EXTRACT_COMMAND.get(ext, "") if allow_extract else ""))
 
-    fmt = (
-        '( wget -O "{fn}" "{uri}" && {postprocess} "{fn}" )'
-        if postprocess
-        else '( wget -O "{fn}" "{uri}")'
-    )
+    fmt = ('( wget -O "{fn}" "{uri}" && {postprocess} "{fn}" )' if postprocess else '( wget -O "{fn}" "{uri}")')
 
     return fmt.format(fn=filename, uri=uri, postprocess=postprocess)
 
 
 class MetronomeMigrator(Migrator):
     """docstring for SecretsMigrator."""
-
     def __init__(
         self,
         defaultImage: str = "alpine:latest",
@@ -47,13 +33,15 @@ class MetronomeMigrator(Migrator):
         self.manifest: "Manifest"
         self.image = defaultImage
         self.workingDir = workingDir
+        self.jobSecret: T.Any = None
         self._warnings: T.Dict[str, str] = dict()
         self.translate = {
             "id": self.initCronJob,
             # id comes first to init our manifest object...
+            "run.secrets.*": self.handleSecret,
             "dependencies|run.docker.parameters": self.noEquivalent,
             "description": self.handleDescription,
-            "env": self.handleEnv,
+            "run.env": self.handleEnv,
             "labels.*": self.handleLabels,
             "run.args": self.handleRunArgs,
             "run.artifacts": self.handleArtifacts,
@@ -75,7 +63,6 @@ class MetronomeMigrator(Migrator):
             "run.user": self.handleUser,
             "run.volumes": self.handleVolumes,
             "schedules[0]": self.handleSchedule,
-            # "secrets": do not need to be handled explicitly. run.env will use its data.
         }
 
     @property
@@ -103,7 +90,8 @@ class MetronomeMigrator(Migrator):
 
         # intentionally written this way so one can easily scan down paths
         container1 = K.V1Container(
-            name=name, resources=K.V1ResourceRequirements(limits={}, requests={}),
+            name="job",
+            resources=K.V1ResourceRequirements(limits={}, requests={}),
         )
         self.manifest = Manifest(
             data=[
@@ -114,13 +102,8 @@ class MetronomeMigrator(Migrator):
                     spec=K.V1beta1CronJobSpec(
                         schedule="* * * * *",
                         suspend=True,
-                        job_template=K.V1beta1JobTemplateSpec(
-                            spec=K.V1JobSpec(
-                                template=K.V1PodTemplateSpec(
-                                    spec=K.V1PodSpec(containers=[container1])
-                                )
-                            )
-                        ),
+                        job_template=K.V1beta1JobTemplateSpec(spec=K.V1JobSpec(template=K.V1PodTemplateSpec(
+                            spec=K.V1PodSpec(containers=[container1])))),
                     ),
                 )
             ],
@@ -135,6 +118,9 @@ class MetronomeMigrator(Migrator):
         )
 
     def handleArtifacts(self, key: str, value: T.List[T.Any], full_path: str) -> None:
+        if len(value) < 1:
+            return
+
         def iter_command() -> T.Generator[str, None, None]:
             yield "set -x"
             yield "set -e"
@@ -146,9 +132,7 @@ class MetronomeMigrator(Migrator):
                 extract = fetch.pop("extract", True)
                 executable = fetch.pop("executable", False)
                 if fetch:
-                    self.warn(
-                        full_path, f'Unknown fields in "fetch": {json.dumps(fetch)}'
-                    )
+                    self.warn(full_path, f'Unknown fields in "fetch": {json.dumps(fetch)}')
                 if cache:
                     self.warn(
                         full_path,
@@ -156,28 +140,26 @@ class MetronomeMigrator(Migrator):
                     )
                 if uri.startswith("file://"):
                     self.warn(full_path, f"Fetching a local file {uri} is not portable")
-                yield generate_fetch_command(
-                    uri, extract, executable
-                ) + ' & FETCH_PID_ARRAY+=("$!")'
+                yield generate_fetch_command(uri, extract, executable) + ' & FETCH_PID_ARRAY+=("$!")'
             yield "for pid in ${FETCH_PID_ARRAY[@]}; do wait $pid || exit $?; done"
 
-        self.container.volume_mounts = [
-            {
+        self.container.volume_mounts = [{
+            "name": "fetch-artifacts",
+            "mountPath": self.workingDir,
+        }]
+        self.jobSpec.template.spec.init_containers = [{
+            "name":
+            "fetch",
+            "image":
+            "bash:5.0",
+            "command": ["bash", "-c", "\n".join(iter_command())],
+            "volumeMounts": [{
                 "name": "fetch-artifacts",
-                "mountPath": self.workingDir,
-            }
-        ]
-        self.jobSpec.template.spec.init_containers = [
-            {
-                "name": "fetch",
-                "image": "bash:5.0",
-                "command": ["bash", "-c", "\n".join(iter_command())],
-                "volumeMounts": [
-                    {"name": "fetch-artifacts", "mountPath": "/fetch-artifacts"}
-                ],
-                "workingDir": "/fetch_artifacts",
-            }
-        ]
+                "mountPath": "/fetch-artifacts"
+            }],
+            "workingDir":
+            "/fetch_artifacts",
+        }]
         self.jobSpec.template.spec.volumes = [{"name": "fetch-artifacts", "emptyDir": {}}]
 
     def handleCmd(self, key: str, value: str, full_path: str) -> None:
@@ -187,16 +169,50 @@ class MetronomeMigrator(Migrator):
     def handleDescription(self, key: str, value: str, full_path: str) -> None:
         self.cronJob.metadata.annotations["migration.dcos.d2iq.com/description"] = value
 
+    def handleSecret(self, key: str, value: T.Dict[str, str], full_path: str) -> None:
+        if not self.jobSecret:
+            assert self.object
+            name = self.dnsify("jobsecret." + str(self.object.get("id", "")))
+            metadata = K.V1ObjectMeta(name=name)
+            assert self.manifest_list
+            clusterMeta = self.manifest_list.clusterMeta()
+            if clusterMeta:
+                metadata.annotations = clusterMeta.annotations
+            self.jobSecret = K.V1Secret(metadata=metadata, data={})
+            self.jobSecret.api_version = 'v1'
+            self.jobSecret.kind = 'Secret'
+            self.manifest.append(self.jobSecret)
+
+        sourceSecretName = value.get("source", "")
+
+        if not sourceSecretName:
+            # logging.critical("{}.source missing", full_path)
+            return
+
+        source_key = utils.dnsify(sourceSecretName)
+        assert self.manifest_list
+        sourceSecret = self.manifest_list.manifest(pluginName='secret', manifestName=source_key)
+        if not sourceSecret:
+            # logging.warning("secret {} missing", source_key)
+            self.jobSecret.data[key] = "{} not found".format(source_key)
+            return
+
+        [v] = sourceSecret[0].data.values()
+
+        self.jobSecret.data[key] = v
+
     def handleEnv(self, key: str, value: T.Dict[str, T.Any], full_path: str) -> None:
         env = []
         for k, v in value.items():
             if "secret" in v:
-                assert self.object
-                keyRef = self.dnsify(
-                    self.object.get("secrets", {}).get(v["secret"], {}).get("source")
-                )
+                if not self.jobSecret:
+                    # logging.critical("No secret found")
+                    return
+
+                keyRef = self.jobSecret.metadata.name
+
                 # TODO: find ref from secrets metadata
-                key_selector = K.V1SecretKeySelector(key=keyRef, name="TODO_ref")
+                key_selector = K.V1SecretKeySelector(key=v["secret"], name=keyRef)
                 env_var_src = K.V1EnvVarSource(secret_key_ref=key_selector)
                 env.append(K.V1EnvVar(name=k, value_from=env_var_src))
             else:
@@ -220,7 +236,7 @@ class MetronomeMigrator(Migrator):
     def handleLimitsDisk(self, key: str, value: float, full_path: str) -> None:
         if value == 0:
             return
-        self.container.resources.limits["ephemeral-storage"] = value
+        self.container.resources.limits["ephemeral-storage"] = str(value) + "Mi"
 
     def handleLimitsGPUs(self, key: str, value: float, full_path: str) -> None:
         self.container.resources.requests["nvidia.com/gpu"] = value
@@ -237,12 +253,11 @@ class MetronomeMigrator(Migrator):
         if value != []:
             self.warn(full_path, "conversion of .run.networks is not yet implemented.")
 
-    def handlePlacementConstraints(
-        self, key: str, value: T.Any, full_path: str
-    ) -> None:
+    def handlePlacementConstraints(self, key: str, value: T.Any, full_path: str) -> None:
         if value != []:
             self.warn(
-                full_path, "conversion of .run.placement.constraints not implemented.",
+                full_path,
+                "conversion of .run.placement.constraints not implemented.",
             )
 
     def handlePrivileged(self, key: str, value: bool, full_path: str) -> None:
@@ -297,14 +312,10 @@ class MetronomeMigrator(Migrator):
 
         self.handleImage("image", value["id"], full_path + ".id")
         if value.get("forcePull") is not None:
-            self.handleForcePull(
-                "forcePull", value["forcePull"], full_path + ".forcePull"
-            )
+            self.handleForcePull("forcePull", value["forcePull"], full_path + ".forcePull")
 
         if value.get("privileged") is not None:
-            self.handlePrivileged(
-                "privileged", value["privileged"], full_path + ".privileged"
-            )
+            self.handlePrivileged("privileged", value["privileged"], full_path + ".privileged")
 
     def handleUser(self, key: str, value: str, full_path: str) -> None:
         self.warn(

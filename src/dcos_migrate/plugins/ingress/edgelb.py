@@ -3,45 +3,25 @@
 import warnings
 from typing import Any, Dict, Optional
 
-BALANCE_WARNING = (
-    "Backend {} uses a haproxy balance method {}, " "forcing to `roundrobin`."
-)
+BALANCE_WARNING = ("Backend {} uses a haproxy balance method {}, " "forcing to `roundrobin`.")
 
-MAP_HOST_WARNING = (
-    "Frontend {} map contains multiple host matches, "
-    "only `hostReg` will be used. ({})"
-)
+MAP_HOST_WARNING = ("Frontend {} map contains multiple host matches, " "only `hostReg` will be used. ({})")
 
-MAP_PATH_WARNING = (
-    "Frontend {} map contains multiple path matches, "
-    "only `pathReg` will be used. ({})"
-)
+MAP_PATH_WARNING = ("Frontend {} map contains multiple path matches, " "only `pathReg` will be used. ({})")
 
-MISC_WARNING = (
-    "{} {} contains `miscStrs`, "
-    "these cannot be auto migrated, please inspect "
-    "the final configuration and configure as needed."
-)
+MISC_WARNING = ("{} {} contains `miscStrs`, "
+                "these cannot be auto migrated, please inspect "
+                "the final configuration and configure as needed.")
 
-NO_SERVICES_WARNING = (
-    "Backend {} contains more no service entry. "
-    "Backend will not be migrated."
-)
+NO_SERVICES_WARNING = ("Backend {} contains more no service entry. " "Backend will not be migrated.")
 
-MULTIPLE_SERVICE_WARNING = (
-    "Backend {} contains more than one service entry ({}). "
-    "Only the first one will be used."
-)
+MULTIPLE_SERVICE_WARNING = ("Backend {} contains more than one service entry ({}). "
+                            "Only the first one will be used.")
 
-PORT_WARNING = (
-    "Backend {} does not use a portName for the endpoint. "
-    "The appropriate port name must be added manually."
-)
+PORT_WARNING = ("Backend {} does not use a portName for the endpoint. "
+                "The appropriate port name must be added manually.")
 
-TCP_WARNING = (
-    "Frontend for port {} is not HTTP/HTTPs, "
-    "cannot auto migrate to traefik 1.7."
-)
+TCP_WARNING = ("Frontend for port {} is not HTTP/HTTPs, " "cannot auto migrate to traefik 1.7.")
 
 V1_WARNING = "{}: EdgeLB V1 Pool format detected, only V2 is supported."
 
@@ -135,9 +115,7 @@ def parse_pool(pool: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             warnings.warn(TCP_WARNING.format(frontend["bindPort"]))
 
         if frontend.get("miscStrs"):
-            warnings.warn(
-                MISC_WARNING.format("Frontend", pool.get("name", "unknown"))
-            )
+            warnings.warn(MISC_WARNING.format("Frontend", pool.get("name", "unknown")))
 
         link_backend = frontend["linkBackend"]
         frontend_name = frontend.get("name")

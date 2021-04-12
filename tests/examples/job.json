@@ -47,18 +47,18 @@
       }
     ],
     "taskKillGracePeriodSeconds": 123,
-    "user": "user1"
-  },
-  "secrets": {
-    "secret0": {
-      "source": "mySecret"
-    }
-  },
-  "env": {
-    "MyVAR": {
-      "secret": "secret0"
+    "user": "user1",
+    "secrets": {
+      "secret0": {
+        "source": "hello-world/secret"
+      }
     },
-    "envKey": "envVal"
+    "env": {
+      "MyVAR": {
+        "secret": "secret0"
+      },
+      "envKey": "envVal"
+    }
   },
   "schedules": [{
     "id": "5min",

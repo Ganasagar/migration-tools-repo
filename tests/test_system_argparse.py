@@ -23,11 +23,15 @@ def test_argparse_parse():
         BoolArg("insecure", plugin_name="testplugin"),
         BoolArg("testoption")
     ]
-    cliargs = ["--testplugin-image", "image:foo",
-               "--testplugin-secretoverwrites", "dcos/secret1=k8s.secret1", "dcos/secret2=k8s.secret2",
-               "--testplugin-insecure",
-               "--testoption",
-               ]
+    cliargs = [
+        "--testplugin-image",
+        "image:foo",
+        "--testplugin-secretoverwrites",
+        "dcos/secret1=k8s.secret1",
+        "dcos/secret2=k8s.secret2",
+        "--testplugin-insecure",
+        "--testoption",
+    ]
 
     options = {
         'global': {

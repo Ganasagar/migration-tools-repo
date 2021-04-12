@@ -20,7 +20,7 @@ spec:
             - awef
             image: alpine
             imagePullPolicy: Always
-            name: hello_world
+            name: job
             resources:
               limits:
                 cpu: 1

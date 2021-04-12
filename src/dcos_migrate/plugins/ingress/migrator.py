@@ -7,15 +7,10 @@ from kubernetes.client import models  # type: ignore
 
 from dcos_migrate import system
 
+FRONTEND_PORT_WARNING = ("Frontend {} uses a port other than 80/443. Please edit the input to map "
+                         "it to an HTTP/HTTPS site.")
 
-FRONTEND_PORT_WARNING = (
-    "Frontend {} uses a port other than 80/443. Please edit the input to map "
-    "it to an HTTP/HTTPS site."
-)
-
-TCP_BACKEND_WARNING = (
-    "Frontend {} does not specify or specifies an invalid default backend."
-)
+TCP_BACKEND_WARNING = ("Frontend {} does not specify or specifies an invalid default backend.")
 
 
 def migrate_ingress(pool: Dict[str, Any]) -> Optional[models.ExtensionsV1beta1Ingress]:
@@ -30,9 +25,7 @@ def migrate_ingress(pool: Dict[str, Any]) -> Optional[models.ExtensionsV1beta1In
             continue
 
         if frontend.get("port") not in (80, 443):
-            warnings.warn(
-                FRONTEND_PORT_WARNING.format(frontend.get("name", "UNKNOWN"))
-            )
+            warnings.warn(FRONTEND_PORT_WARNING.format(frontend.get("name", "UNKNOWN")))
 
         frontend_rules = frontend.get("rules")
         if not frontend_rules:
@@ -51,9 +44,7 @@ def migrate_ingress(pool: Dict[str, Any]) -> Optional[models.ExtensionsV1beta1In
 
             r = models.ExtensionsV1beta1IngressRule(
                 host=rule.get("host"),
-                http=models.ExtensionsV1beta1HTTPIngressRuleValue(
-                    paths=[path],
-                ),
+                http=models.ExtensionsV1beta1HTTPIngressRuleValue(paths=[path], ),
             )
 
             rules.append(r)
@@ -96,9 +87,7 @@ def migrate_lb(pool: Dict[str, Any]) -> List[models.V1Service]:
         backend = backends.get(frontend.get("default_backend"))
 
         if not backend:
-            warnings.warn(
-                TCP_BACKEND_WARNING.format(frontend.get("name", "UNKNOWN"))
-            )
+            warnings.warn(TCP_BACKEND_WARNING.format(frontend.get("name", "UNKNOWN")))
             continue
 
         # TODO(jkoelker) figure out targetPort
@@ -178,8 +167,6 @@ class Ingress(system.Migrator):
             if obj.metadata:
                 obj.metadata.annotations.update(cluster_annotations)
             else:
-                obj.metadata = models.V1ObjectMeta(
-                    annotations=cluster_annotations,
-                )
+                obj.metadata = models.V1ObjectMeta(annotations=cluster_annotations, )
 
             self.manifest.append(obj)

@@ -7,10 +7,8 @@ from dcos_migrate.utils import make_label, make_subdomain, dnsify, namespace_pat
     ("foo", "foo"),
     ("foo/bar", "foo-bar"),
     ("foo!bar/baz", "foo-bar-baz"),
-    (
-        "storage/tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23A-private-key",
-        "storage-tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23"
-    ),
+    ("storage/tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23A-private-key",
+     "storage-tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23"),
     ("==", 'x0'),
 ])
 def test_make_label(path_name, expected_name):
@@ -22,10 +20,8 @@ def test_make_label(path_name, expected_name):
     ("foo", "foo"),
     ("foo/bar", "foo.bar"),
     ("foo!bar/baz", "foo-bar.baz"),
-    (
-        "storage/tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23A-private-key",
-        "storage.tls-6exbifni3adkchakekfso7ra6szo4wauo5jmxmfn5ls5dxa5n23a-privat.e-key"
-    ),
+    ("storage/tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23A-private-key",
+     "storage.tls-6exbifni3adkchakekfso7ra6szo4wauo5jmxmfn5ls5dxa5n23a-privat.e-key"),
     ("==", 'x--0'),
 ])
 def test_make_subdomain(path_name, expected_name):
@@ -37,10 +33,8 @@ def test_make_subdomain(path_name, expected_name):
     ("foo", "foo"),
     ("foo/bar", "foo.bar"),
     ("foo!bar/baz", "foo_bar.baz"),
-    (
-        "storage/tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23A-private-key",
-        "storage.tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23A-private-key"
-    ),
+    ("storage/tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23A-private-key",
+     "storage.tls-6EXBIFNI3ADKCHAKEKFSO7RA6SZO4WAUO5JMXMFN5LS5DXA5N23A-private-key"),
     ("==", '__'),
 ])
 def test_dnsify(path_name, expected_name):

@@ -7,8 +7,7 @@ def create_example_list(dir: str) -> StorableList:
     p = "testPlugin"
     b = "foobar"
     d = {"foo": "bar"}
-    list.append(Backup(pluginName=p,
-                       backupName=b, data=d))
+    list.append(Backup(pluginName=p, backupName=b, data=d))
 
     list.store()
     return list, p, b, d

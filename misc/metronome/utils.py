@@ -40,7 +40,6 @@ def flatten(value, prefix=""):
     We want to do something like that to ensure that we handled all props that
     occurred in the given spec.
     """
-
     def merge_via(xs, prefix):
         d = {}
         for k, v in xs:

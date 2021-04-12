@@ -6,8 +6,7 @@ import textwrap
 
 def test_manifest_deserialize_get_model_name():
     assert "V1Job" == Manifest.genModelName("v1", "Job")
-    assert "V1beta1CronJob" == Manifest.genModelName(
-        "batch/v1beta1", "CronJob")
+    assert "V1beta1CronJob" == Manifest.genModelName("batch/v1beta1", "CronJob")
 
 
 def test_manifest_deserialize_multidoc_model():
@@ -39,11 +38,9 @@ def test_manifest_comments_deserialization():
     obj_with_empty_comment = V1beta1CronJobWithComment(api_version='v1234', kind='CronJob')
     obj_with_empty_comment.set_comment([])
 
-    manifest = Manifest(
-        pluginName='foo',
-        manifestName='bar',
-        data=[obj_with_comment, obj_without_comment, obj_with_empty_comment]
-    )
+    manifest = Manifest(pluginName='foo',
+                        manifestName='bar',
+                        data=[obj_with_comment, obj_without_comment, obj_with_empty_comment])
 
     dump = manifest.dumps(None)
     assert dump == textwrap.dedent("""\

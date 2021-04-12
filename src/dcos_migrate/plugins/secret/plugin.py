@@ -13,18 +13,15 @@ from typing import cast, Any, Dict, List
 
 
 class DCOSSecretsService:
-
     def __init__(self, client: DCOSClient):
         self.client = client
         self.url = "{}/{}".format(self.client.dcos_url, 'secrets/v1')
         self.store = 'default'
 
     def list(self, path: str = '') -> List[str]:
-        u = '{url}/secret/{store}/{path}?list=true'.format(
-            url=self.url,
-            store=urllib.parse.quote(self.store),
-            path=urllib.parse.quote(path)
-        )
+        u = '{url}/secret/{store}/{path}?list=true'.format(url=self.url,
+                                                           store=urllib.parse.quote(self.store),
+                                                           path=urllib.parse.quote(path))
         r = self.client.get(u)
         r.raise_for_status()
         return cast(List[str], r.json()['array'])
@@ -42,25 +39,20 @@ class DCOSSecretsService:
         #   "value": "base64(value)"
         # }
         full_path = (path + '/' + key).strip('/')
-        url = self.url + '/secret/{store}/{path}'.format(
-            store=urllib.parse.quote(self.store), path=urllib.parse.quote(full_path)
-        )
+        url = self.url + '/secret/{store}/{path}'.format(store=urllib.parse.quote(self.store),
+                                                         path=urllib.parse.quote(full_path))
         r = self.client.get(url, headers={'Accept': '*/*'})
         r.raise_for_status()
         content_type = r.headers['Content-Type']
         if content_type == 'application/octet-stream':
-            response = {
-                'type': 'binary',
-                'value': base64.b64encode(r.content).decode('ascii')
-            }
+            response = {'type': 'binary', 'value': base64.b64encode(r.content).decode('ascii')}
         else:
             assert content_type == 'application/json', content_type
             response = r.json()
             response['type'] = 'text'
             # Always encode the secret as base64, even when it is safe UTF-8 text.
             # This obscures the values to prevent unintentional exposure.
-            response['value'] = base64.b64encode(
-                response['value'].encode('utf-8')).decode('ascii')
+            response['value'] = base64.b64encode(response['value'].encode('utf-8')).decode('ascii')
         # Always add the `path` and `key` values to the JSON response. Ensure the key always has a
         # value by taking the last component of the path if necessary.
         if not key:
@@ -82,7 +74,8 @@ class SecretPlugin(MigratePlugin):
     def __init__(self) -> None:
         super(SecretPlugin, self).__init__()
 
-    def backup(self, client: DCOSClient, **kwargs) -> BackupList:  # type: ignore
+    def backup(  # type: ignore
+            self, client: DCOSClient, **kwargs) -> BackupList:
         backupList = BackupList()
         sec = DCOSSecretsService(client)
         path = ""
@@ -91,14 +84,11 @@ class SecretPlugin(MigratePlugin):
             for key in keys:
                 secData = sec.get(path, key)
 
-                backupList.append(
-                    Backup(self.plugin_name, Backup.renderBackupName(path + key), data=secData))
+                backupList.append(Backup(self.plugin_name, Backup.renderBackupName(path + key), data=secData))
 
         return backupList
 
-    def migrate(
-        self, backupList: BackupList, manifestList: ManifestList, **kwargs: Any
-    ) -> ManifestList:
+    def migrate(self, backupList: BackupList, manifestList: ManifestList, **kwargs: Any) -> ManifestList:
         ml = ManifestList()
 
         for ba in backupList.backups(pluginName='secret'):
@@ -124,8 +114,7 @@ class SecretPlugin(MigratePlugin):
             # is base64-encoded during backup so it can be passed as-is here.
             sec.data = {utils.dnsify(name): b['value']}
 
-            manifest = Manifest(pluginName=self.plugin_name,
-                                manifestName=utils.dnsify(fullPath))
+            manifest = Manifest(pluginName=self.plugin_name, manifestName=utils.dnsify(fullPath))
             manifest.append(sec)
 
             ml.append(manifest)

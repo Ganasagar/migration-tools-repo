@@ -10,16 +10,10 @@ from dcos_migrate.system import Arg
 
 
 def is_plugin(obj: Any) -> bool:
-    return (
-        inspect.isclass(obj)
-        and issubclass(obj, MigratePlugin)
-        and obj.plugin_name is not None
-    )
+    return (inspect.isclass(obj) and issubclass(obj, MigratePlugin) and obj.plugin_name is not None)
 
 
-def get_dependency_batches(
-    plugins: Dict[str, MigratePlugin], depattr: str
-) -> List[List[MigratePlugin]]:
+def get_dependency_batches(plugins: Dict[str, MigratePlugin], depattr: str) -> List[List[MigratePlugin]]:
     """
     Return a list of lists of plugins. The plugins in the first list must be run
     before the plugins in the second list, and so on, for each list.
@@ -83,25 +77,26 @@ class PluginManager(object):
             self.discover_modules()
 
     def iter_namespace(self) -> Iterator[pkgutil.ModuleInfo]:
-        return pkgutil.iter_modules(self.plugin_namespace.__path__,  # type: ignore
-                                    self.plugin_namespace.__name__ + ".")
+        return pkgutil.iter_modules(
+            self.plugin_namespace.__path__,  # type: ignore
+            self.plugin_namespace.__name__ + ".")
 
-    @ property
+    @property
     def backup_batch(self) -> List[List[MigratePlugin]]:
         """list: List of list of tuples plugin name and plugin class."""
         return self.backup
 
-    @ property
+    @property
     def backup_data_batch(self) -> List[List[MigratePlugin]]:
         """list: List of tuples plugin name and plugin class."""
         return self.backup_data
 
-    @ property
+    @property
     def migrate_batch(self) -> List[List[MigratePlugin]]:
         """list: List of tuples plugin name and plugin class."""
         return self.migrate
 
-    @ property
+    @property
     def migrate_data_batch(self) -> List[List[MigratePlugin]]:
         """list: List of tuples plugin name and plugin class."""
         return self.migrate_data
@@ -126,25 +121,20 @@ class PluginManager(object):
             plugin_module = importlib.import_module(name)
 
             for clsName, cls in inspect.getmembers(plugin_module, is_plugin):
-                logging.info(
-                    "found plugin {} - {}".format(cls.plugin_name, clsName))
+                logging.info("found plugin {} - {}".format(cls.plugin_name, clsName))
                 self.plugins[cls.plugin_name] = cls()
 
         # if we discover we need to build dependencies
         self.build_dependencies()
 
     def build_dependencies(self) -> None:
-        self.backup = get_dependency_batches(plugins=self.plugins,
-                                             depattr="backup_depends")
+        self.backup = get_dependency_batches(plugins=self.plugins, depattr="backup_depends")
         logging.debug("Backup batches {}".format(self.backup))
-        self.backup_data = get_dependency_batches(plugins=self.plugins,
-                                                  depattr="backup_data_depends")
+        self.backup_data = get_dependency_batches(plugins=self.plugins, depattr="backup_data_depends")
         logging.debug("Backup Data batches {}".format(self.backup_data))
-        self.migrate = get_dependency_batches(plugins=self.plugins,
-                                              depattr="migrate_depends")
+        self.migrate = get_dependency_batches(plugins=self.plugins, depattr="migrate_depends")
         logging.debug("Migrate batches {}".format(self.migrate))
-        self.migrate_data = get_dependency_batches(plugins=self.plugins,
-                                                   depattr="migrate_data_depends")
+        self.migrate_data = get_dependency_batches(plugins=self.plugins, depattr="migrate_data_depends")
         logging.debug("Migrate Data batches {}".format(self.migrate_data))
 
         self.build_config_options()

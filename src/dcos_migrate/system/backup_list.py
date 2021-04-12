@@ -6,7 +6,6 @@ from jsonpath_ng import parse  # type: ignore
 
 class BackupList(StorableList):
     """docstring for BackupList."""
-
     def __init__(self, dry: bool = False, path: str = './dcos-migrate/backup'):
         super(BackupList, self).__init__(path)
         self._dry = dry
@@ -40,10 +39,9 @@ class BackupList(StorableList):
 
         return bl
 
-    def append_data(self, pluginName: str, backupName: str,  # type: ignore
-                    extension: str, data: str, **kwargs) -> None:
-        b = Backup(pluginName=pluginName, backupName=backupName,
-                   extension=extension)
+    def append_data(  # type: ignore
+            self, pluginName: str, backupName: str, extension: str, data: str, **kwargs) -> None:
+        b = Backup(pluginName=pluginName, backupName=backupName, extension=extension)
         b.deserialize(data)
 
         self.append(b)

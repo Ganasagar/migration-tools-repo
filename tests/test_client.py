@@ -23,8 +23,7 @@ def conf():
 
 @requests_mock.Mocker(kw='mock')
 def test_client_request(conf, **kwargs):
-    kwargs['mock'].get('mock://test.cluster.mesos/foo',
-                       text='{"msg": "bar"}')
+    kwargs['mock'].get('mock://test.cluster.mesos/foo', text='{"msg": "bar"}')
 
     client = DCOSClient(toml_config=dcos.config.Toml(conf))
 
@@ -36,8 +35,7 @@ def test_client_request(conf, **kwargs):
 
 @requests_mock.Mocker(kw='mock')
 def test_client_request_authentication(conf, **kwargs):
-    kwargs['mock'].get('mock://test.cluster.mesos/foo',
-                       headers={"Authorization": "token=im-a-fake-token"})
+    kwargs['mock'].get('mock://test.cluster.mesos/foo', headers={"Authorization": "token=im-a-fake-token"})
 
     client = DCOSClient(toml_config=dcos.config.Toml(conf))
     invalid = conf
@@ -46,8 +44,7 @@ def test_client_request_authentication(conf, **kwargs):
     resp = client.get(client.full_dcos_url("foo"))
     assert resp.status_code == 200
 
-    kwargs['mock'].get('mock://test.cluster.mesos/foo',
-                       status_code=401)
+    kwargs['mock'].get('mock://test.cluster.mesos/foo', status_code=401)
 
     with pytest.raises(DCOSAuthenticationException):
         client_invalid.get(client.full_dcos_url("foo"))

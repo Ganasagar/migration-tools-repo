@@ -21,16 +21,11 @@ class JenkinsPlugin(MigratePlugin):
         bl = BackupList()
         for b in backupList.backups(pluginName="marathon"):
             assert isinstance(b, Backup)
-            if (
-                b.data
-                and 'labels' in b.data
-                and "DCOS_PACKAGE_NAME" in b.data['labels']
-                and b.data['labels']['DCOS_PACKAGE_NAME'] == "jenkins"
-            ):
+            if (b.data and 'labels' in b.data and "DCOS_PACKAGE_NAME" in b.data['labels']
+                    and b.data['labels']['DCOS_PACKAGE_NAME'] == "jenkins"):
                 # we found a jenkins package lets extract the config
                 if 'DCOS_PACKAGE_OPTIONS' in b.data['labels']:
-                    options_str = b64decode(
-                        b.data['labels']['DCOS_PACKAGE_OPTIONS'])
+                    options_str = b64decode(b.data['labels']['DCOS_PACKAGE_OPTIONS'])
 
                     options = json.loads(options_str)
                     data = {
@@ -40,8 +35,7 @@ class JenkinsPlugin(MigratePlugin):
                     }
 
                     bl.append(
-                        Backup(pluginName=self.plugin_name, backupName=Backup.renderBackupName(
-                            b.data['labels']['DCOS_SERVICE_NAME']), data=data
-                        )
-                    )
+                        Backup(pluginName=self.plugin_name,
+                               backupName=Backup.renderBackupName(b.data['labels']['DCOS_SERVICE_NAME']),
+                               data=data))
         return bl

@@ -6,7 +6,6 @@ import xml.dom.minidom
 from string import Template
 from xml.sax.saxutils import escape
 
-
 # Kubernetes Cloud templates - EDIT ONLY IF YOU KNOW WHAT YOU ARE DOING!
 KUBERNETES_CLOUD_TEMPLATE = """
 <org.csanchez.jenkins.plugins.kubernetes.KubernetesCloud plugin="kubernetes@1.24.1">
@@ -214,7 +213,6 @@ def plugin100Transform(cloud) -> str:
                 if customDockerCommandShell.text == "wrapper.sh":
                     container_template_subs["command"] = escape(f"wrapper.sh {JENKINS_AGENT_ENTRYPOINT}")
 
-
         # Loss of information for "additionalURIs" at slaveInfo level and "parameters" at "containerInfo" level
         for item in ["additonalURIs"]:
             if slave_info.find(item) is not None:
@@ -245,7 +243,9 @@ def plugin100Transform(cloud) -> str:
                         protocol = port_mapping.find("./protocol").text
                         # use name as protocol (udp OR tcp)
                         k8s_port_mappings.append(
-                            Template(PORT_MAPPING).substitute(containerPort=containerPort, hostPort=hostPort, name=protocol))
+                            Template(PORT_MAPPING).substitute(containerPort=containerPort,
+                                                              hostPort=hostPort,
+                                                              name=protocol))
                     container_template_subs["ports"] = "".join(k8s_port_mappings)
             elif networkType == "HOST":
                 pod_template_subs["hostNetwork"] = "true"
@@ -255,7 +255,10 @@ def plugin100Transform(cloud) -> str:
                 log.warning("Invalid value for networking : {}".format(networkType))
 
         # Inject the volume mounts. Mandatory ConfigMap volume mount followed by 0 or more mounts from mesos plugin configuration
-        volumes = [Template(CONFIGMAP_VOLUME_MOUNT_TEMPLATE).substitute(mountPath="/var/configmaps", configMapName="jenkins-agent-3-35-5")]
+        volumes = [
+            Template(CONFIGMAP_VOLUME_MOUNT_TEMPLATE).substitute(mountPath="/var/configmaps",
+                                                                 configMapName="jenkins-agent-3-35-5")
+        ]
         mesos_volumes = containerInfo.find("volumes")
         if mesos_volumes is not None and len(mesos_volumes) > 0:
             for v in mesos_volumes:
@@ -264,7 +267,8 @@ def plugin100Transform(cloud) -> str:
                 readOnly = v.find("./readOnly")
                 if readOnly == "true":
                     log.warning("ignoring readOnly flag for volume mount {}:{}".format(hostPath, containerPath))
-                volumes.append(Template(HOSTPATH_VOLUME_MOUNT_TEMPLATE).substitute(mountPath=containerPath, hostPath=hostPath))
+                volumes.append(
+                    Template(HOSTPATH_VOLUME_MOUNT_TEMPLATE).substitute(mountPath=containerPath, hostPath=hostPath))
         pod_template_subs["VOLUMES"] = "".join(volumes)
 
         # Override the jnlp container that would usually be injected by kubernetes plug in
@@ -345,7 +349,9 @@ def translate_mesos_to_k8s_config_xml(src_file: str, target_file: str):
         modified = True
         # log.info("-------------------\n\n\n {} \n\n\n----------------------".format(new_cloud_str))
         clouds[i] = ET.fromstring(new_cloud_str)
-        log.info(f'Completed translation of "{mesos_cloud_tag}" @ "{ver}" in the config file to the Kubernetes Cloud configuration')
+        log.info(
+            f'Completed translation of "{mesos_cloud_tag}" @ "{ver}" in the config file to the Kubernetes Cloud configuration'
+        )
 
     if not modified:
         # Write to a file.

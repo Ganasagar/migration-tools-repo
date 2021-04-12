@@ -10,7 +10,6 @@ from typing import Dict, List, Union
 
 
 class DCOSSecretsService:
-
     def __init__(self, url: str, token: str, verify: Union[bool, str]):
         self.url = url + '/secrets/v1'
         self.auth = 'token=' + token
@@ -19,9 +18,8 @@ class DCOSSecretsService:
 
     def list(self, path: str = '') -> List[str]:
         r = requests.get(
-            self.url + '/secret/{store}/{path}?list=true'.format(
-                store=urllib.parse.quote(self.store), path=urllib.parse.quote(path)
-            ),
+            self.url + '/secret/{store}/{path}?list=true'.format(store=urllib.parse.quote(self.store),
+                                                                 path=urllib.parse.quote(path)),
             headers={'Authorization': self.auth},
             verify=self.verify,
         )
@@ -41,21 +39,20 @@ class DCOSSecretsService:
         #   "value": "base64(value)"
         # }
         full_path = (path + '/' + key).strip('/')
-        url = self.url + '/secret/{store}/{path}'.format(
-            store=urllib.parse.quote(self.store), path=urllib.parse.quote(full_path)
-        )
+        url = self.url + '/secret/{store}/{path}'.format(store=urllib.parse.quote(self.store),
+                                                         path=urllib.parse.quote(full_path))
         r = requests.get(
             url,
-            headers={'Authorization': self.auth, 'Accept': '*/*'},
+            headers={
+                'Authorization': self.auth,
+                'Accept': '*/*'
+            },
             verify=self.verify,
         )
         r.raise_for_status()
         content_type = r.headers['Content-Type']
         if content_type == 'application/octet-stream':
-            response = {
-                'type': 'binary',
-                'value': base64.b64encode(r.content).decode('ascii')
-            }
+            response = {'type': 'binary', 'value': base64.b64encode(r.content).decode('ascii')}
         else:
             assert content_type == 'application/json', content_type
             response = r.json()
@@ -108,24 +105,17 @@ def get_dcos_url(dcos_cli: str) -> str:
 
 def run(argv: List[str]) -> None:
     parser = argparse.ArgumentParser(description='Backup secrets from DC/OS secrets service.')
-    parser.add_argument(
-        '--path', default='', help='DC/OS secrets namespace to export (default: all secrets)'
-    )
-    parser.add_argument(
-        '--output', default=None, help='DC/OS secrets output file (default: stdout)'
-    )
-    parser.add_argument(
-        '--dcos-cli', default=None, help='DC/OS CLI (default: dcos)'
-    )
+    parser.add_argument('--path', default='', help='DC/OS secrets namespace to export (default: all secrets)')
+    parser.add_argument('--output', default=None, help='DC/OS secrets output file (default: stdout)')
+    parser.add_argument('--dcos-cli', default=None, help='DC/OS CLI (default: dcos)')
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument(
-        '--no-verify', dest='verify', default=True, action='store_false',
-        help='do not verify connections to DC/OS (insecure)'
-    )
-    group.add_argument(
-        '--ca-file', dest='verify', help='specify a CA bundle file to verify connections to DC/OS'
-    )
+    group.add_argument('--no-verify',
+                       dest='verify',
+                       default=True,
+                       action='store_false',
+                       help='do not verify connections to DC/OS (insecure)')
+    group.add_argument('--ca-file', dest='verify', help='specify a CA bundle file to verify connections to DC/OS')
 
     args = parser.parse_args(argv)
     path = args.path
@@ -148,10 +138,7 @@ def run(argv: List[str]) -> None:
         # Expect path to name a specific secret
         secrets.append(s.get(path, ''))
 
-    output = {
-        'cluster_id': cluster_id,
-        'secrets': secrets
-    }
+    output = {'cluster_id': cluster_id, 'secrets': secrets}
     if args.output is None:
         f = sys.stdout
     else:

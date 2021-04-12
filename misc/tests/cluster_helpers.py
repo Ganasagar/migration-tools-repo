@@ -58,9 +58,7 @@ def session_from_cluster(
         dcos_url=dcos_url,
         masters=[str(n.public_ip_address) for n in cluster.masters],
         slaves=[str(n.public_ip_address) for n in cluster.agents],
-        public_slaves=[
-            str(n.public_ip_address) for n in cluster.public_agents
-        ],
+        public_slaves=[str(n.public_ip_address) for n in cluster.public_agents],
         auth_user=auth_user,
     )
     enterprise_session.set_ca_cert()
@@ -86,9 +84,7 @@ def dump_cluster_journals(cluster: Cluster, target_dir: Path) -> None:
         ('public_agent', cluster.public_agents),
     ):
         for index, node in enumerate(nodes):
-            node_str = (
-                '{role}-{index}_{private_ip}'
-            ).format(
+            node_str = ('{role}-{index}_{private_ip}').format(
                 role=role,
                 index=index,
                 private_ip=node.private_ip_address,
@@ -156,9 +152,7 @@ def _dump_stdout_to_file(node: Node, cmd: List[str], file_path: Path) -> None:
             output=bytes(proc.stdout),
             stderr=bytes(proc.stderr),
         )
-        message = (
-            'Failed to complete "{cmd}": {exception}'
-        ).format(
+        message = ('Failed to complete "{cmd}": {exception}').format(
             cmd=cmd,
             exception=exception,
         )
@@ -202,9 +196,7 @@ def dump_host_journal(target_dir: Path, unit: Optional[str] = None) -> None:
             output=proc.stdout.read(),
             stderr='' if proc.stderr is None else proc.stderr.read(),
         )
-        message = (
-            'Failed to complete "{cmd}": {exception}'
-        ).format(
+        message = ('Failed to complete "{cmd}": {exception}').format(
             cmd=cmd,
             exception=exception,
         )
@@ -217,10 +209,7 @@ def _dcos_systemd_units(node: Node) -> List[str]:
     Return all systemd services that are started up by DC/OS.
     """
     result = node.run(
-        args=[
-            'sudo', 'systemctl', 'show', '-p', 'Wants', 'dcos.target', '|',
-            'cut', '-d=', '-f2'
-        ],
+        args=['sudo', 'systemctl', 'show', '-p', 'Wants', 'dcos.target', '|', 'cut', '-d=', '-f2'],
         shell=True,
     )
     systemd_units_string = result.stdout.strip().decode()

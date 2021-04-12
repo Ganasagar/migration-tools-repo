@@ -13,12 +13,7 @@ from . import migrator
 class EdgeLBPlugin(plugin.MigratePlugin):
     plugin_name = "edgelb"
 
-    def backup(
-        self,
-        client: system.DCOSClient,
-        backupList: system.BackupList,
-        **kwargs: Any
-    ) -> system.BackupList:
+    def backup(self, client: system.DCOSClient, backupList: system.BackupList, **kwargs: Any) -> system.BackupList:
         service_path = "/service/edgelb"
         bl = system.BackupList()
 
@@ -33,8 +28,7 @@ class EdgeLBPlugin(plugin.MigratePlugin):
             if e.status() == 404:
                 logging.warning("EdgeLB not installed. Skipping")
             else:
-                logging.critical(
-                    "Unexpected HTTP error for EdgeLB {}".format(e))
+                logging.critical("Unexpected HTTP error for EdgeLB {}".format(e))
             return bl
 
         pools = resp.json()
@@ -55,12 +49,8 @@ class EdgeLBPlugin(plugin.MigratePlugin):
 
         return bl
 
-    def migrate(
-        self,
-        backupList: system.BackupList,
-        manifestList: system.ManifestList,
-        **kwargs: Any
-    ) -> system.ManifestList:
+    def migrate(self, backupList: system.BackupList, manifestList: system.ManifestList,
+                **kwargs: Any) -> system.ManifestList:
         ml = system.ManifestList()
 
         for b in backupList.backups(pluginName=self.plugin_name):

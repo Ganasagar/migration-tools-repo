@@ -13,7 +13,6 @@ from dcos_e2e.cluster import Cluster
 from dcos_e2e.node import Node, Output
 from passlib.hash import sha512_crypt
 
-
 # Configures logging level to DEBUG
 logging.basicConfig(level=logging.DEBUG)
 
@@ -128,32 +127,21 @@ def master_node(
 
 
 @pytest.fixture(scope='session')
-def kind_path(
-    tmp_path_factory: TempPathFactory
-) -> Path:
+def kind_path(tmp_path_factory: TempPathFactory) -> Path:
     tmp_path = tmp_path_factory.mktemp('kind')
     kind_path = tmp_path / 'kind'
-    subprocess.run([
-        'curl',
-        '-Lo',
-        str(kind_path),
-        'https://kind.sigs.k8s.io/dl/v0.9.0/kind-linux-amd64'
-    ])
+    subprocess.run(['curl', '-Lo', str(kind_path), 'https://kind.sigs.k8s.io/dl/v0.9.0/kind-linux-amd64'])
     kind_path.chmod(0o755)
     return kind_path
 
 
 @pytest.fixture(scope='session')
-def kubectl_path(
-    tmp_path_factory: TempPathFactory
-) -> Path:
+def kubectl_path(tmp_path_factory: TempPathFactory) -> Path:
     tmp_path = tmp_path_factory.mktemp('kubectl')
     kubectl_path = tmp_path / 'kubectl'
     subprocess.run([
-        'curl',
-        '-Lo',
-        str(kubectl_path),
-        'https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl'
+        'curl', '-Lo',
+        str(kubectl_path), 'https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl'
     ])
     kubectl_path.chmod(0o755)
     return kubectl_path

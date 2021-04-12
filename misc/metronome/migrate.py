@@ -24,9 +24,7 @@ def warn(msg):
 def dnsify(name):
     new_name = re.sub("[^a-z0-9-]+", "-", name.lower())
     if not name == new_name:
-        info(
-            f'"{name}" is not a valid name in kubernetes. converted it to "{new_name}".'
-        )
+        info(f'"{name}" is not a valid name in kubernetes. converted it to "{new_name}".')
     return new_name
 
 
@@ -53,13 +51,8 @@ def dcos(cmd: str):
     return out
 
 
-EXTRACT_COMMAND = dict(
-    [(".zip", "gunzip")]
-    + [
-        (ext, "tar -xf")
-        for ext in [".tgz", ".tar.gz", ".tbz2", ".tar.bz2", ".txz", ".tar.xz"]
-    ]
-)
+EXTRACT_COMMAND = dict([(".zip", "gunzip")] + [(ext, "tar -xf")
+                                               for ext in [".tgz", ".tar.gz", ".tbz2", ".tar.bz2", ".txz", ".tar.xz"]])
 
 
 def generate_fetch_command(uri: str, allow_extract: bool, executable: bool):
@@ -67,17 +60,9 @@ def generate_fetch_command(uri: str, allow_extract: bool, executable: bool):
     _, _, filename = uri.rpartition("/")
     _, ext = os.path.splitext(filename)
 
-    postprocess = (
-        "chmod a+x"
-        if executable
-        else (EXTRACT_COMMAND.get(ext, "") if allow_extract else "")
-    )
+    postprocess = ("chmod a+x" if executable else (EXTRACT_COMMAND.get(ext, "") if allow_extract else ""))
 
-    fmt = (
-        '( wget -O "{fn}" "{uri}" && {postprocess} "{fn}" )'
-        if postprocess
-        else '( wget -O "{fn}" "{uri}")'
-    )
+    fmt = ('( wget -O "{fn}" "{uri}" && {postprocess} "{fn}" )' if postprocess else '( wget -O "{fn}" "{uri}")')
 
     return fmt.format(fn=filename, uri=uri, postprocess=postprocess)
 
@@ -145,8 +130,7 @@ def translate_job_prop(key, val, result, json_spec, args):
         ref = json_spec["secrets"].get(env_val["secret"])
         if not ref:
             raise RuntimeError(
-                f"Env var '{env_key}' makes use of a secret, but no according mapping was found at '.secrets.{ref}'."
-            )
+                f"Env var '{env_key}' makes use of a secret, but no according mapping was found at '.secrets.{ref}'.")
 
         return {
             "name": env_key,
@@ -168,26 +152,30 @@ def translate_job_prop(key, val, result, json_spec, args):
         return update({"metadata": {"annotations": {"description": val}}})
 
     if ".id" == key:
-        return update(
-            {
-                "metadata": {"name": dnsify(val)},
-                "spec": {"template": {"spec": {"containers": [{"name": dnsify(val)}]}}},
-            }
-        )
+        return update({
+            "metadata": {
+                "name": dnsify(val)
+            },
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [{
+                            "name": dnsify(val)
+                        }]
+                    }
+                }
+            },
+        })
 
     if ".labels" == key:
         return update({"metadata": {"labels": val}})
 
     if re.match(".run.args", key):
-        return update_container(
-            {"args": result.get("run", {}).get("args", []).append(val)}
-        )
+        return update_container({"args": result.get("run", {}).get("args", []).append(val)})
 
     if ".run.artifacts" == key:
         if not args.working_dir:
-            raise RuntimeError(
-                'Job is using "fetch"; please specify non-empty `--working-dir` and run again'
-            )
+            raise RuntimeError('Job is using "fetch"; please specify non-empty `--working-dir` and run again')
 
         def iter_command():
             yield "set -x"
@@ -203,39 +191,34 @@ def translate_job_prop(key, val, result, json_spec, args):
                 if fetch:
                     warn(f'Unknown fields in "fetch": {json.dumps(fetch)}')
                 if cache:
-                    warn(
-                        f'`cache=true` requested for fetching "{uri}" has been ignored'
-                    )
+                    warn(f'`cache=true` requested for fetching "{uri}" has been ignored')
                 if uri.startswith("file://"):
                     warn(f"Fetching a local file {uri} is not portable")
-                yield generate_fetch_command(
-                    uri, extract, executable
-                ) + ' & FETCH_PID_ARRAY+=("$!")'
+                yield generate_fetch_command(uri, extract, executable) + ' & FETCH_PID_ARRAY+=("$!")'
             yield "for pid in ${FETCH_PID_ARRAY[@]}; do wait $pid || exit $?; done"
 
-        return update_pod_spec(
-            {
-                "containers": [
-                    {
-                        "volumeMounts": [
-                            {"name": "fetch-artifacts", "mountPath": args.working_dir,}
-                        ]
-                    }
-                ],
-                "initContainers": [
-                    {
-                        "name": "fetch",
-                        "image": "bash:5.0",
-                        "command": ["bash", "-c", "\n".join(iter_command())],
-                        "volumeMounts": [
-                            {"name": "fetch-artifacts", "mountPath": "/fetch-artifacts"}
-                        ],
-                        "workingDir": "/fetch_artifacts",
-                    }
-                ],
-                "volumes": [{"name": "fetch-artifacts", "emptyDir": {}}],
-            }
-        )
+        return update_pod_spec({
+            "containers": [{
+                "volumeMounts": [{
+                    "name": "fetch-artifacts",
+                    "mountPath": args.working_dir,
+                }]
+            }],
+            "initContainers": [{
+                "name": "fetch",
+                "image": "bash:5.0",
+                "command": ["bash", "-c", "\n".join(iter_command())],
+                "volumeMounts": [{
+                    "name": "fetch-artifacts",
+                    "mountPath": "/fetch-artifacts"
+                }],
+                "workingDir": "/fetch_artifacts",
+            }],
+            "volumes": [{
+                "name": "fetch-artifacts",
+                "emptyDir": {}
+            }],
+        })
 
     if ".run.cmd" == key:
         if not val:
@@ -248,9 +231,7 @@ def translate_job_prop(key, val, result, json_spec, args):
         return update_container({"resources": {"limits": {"cpu": val}}})
 
     if ".run.docker.forcePullImage" == key:
-        return update_container(
-            {"imagePullPolicy": "Always" if val else "IfNotPresent"}
-        )
+        return update_container({"imagePullPolicy": "Always" if val else "IfNotPresent"})
 
     if ".run.docker.image" == key:
         return update_container({"image": val})
@@ -270,25 +251,23 @@ def translate_job_prop(key, val, result, json_spec, args):
     if ".run.env" == key:
         env = []
         for env_key, env_val in val.items():
-            env.append(
-                secret(env_key, env_val)
-                if "secret" in env_val
-                else {"name": env_key, "value": env_val}
-            )
+            env.append(secret(env_key, env_val) if "secret" in env_val else {"name": env_key, "value": env_val})
 
         return update_container({"env": env})
 
     if ".run.gpus" == key:
         if val == 0:
             return result
-        return update_container(
-            {
-                "resources": {
-                    "requests": {"nvidia.com/gpu": val},
-                    "limits": {"nvidia.com/gpu": val},
+        return update_container({
+            "resources": {
+                "requests": {
+                    "nvidia.com/gpu": val
                 },
-            }
-        )
+                "limits": {
+                    "nvidia.com/gpu": val
+                },
+            },
+        })
 
     if ".run.maxLaunchDelay" == key:
         if not val == 3600:
@@ -311,15 +290,11 @@ def translate_job_prop(key, val, result, json_spec, args):
     if ".run.restart.policy" == key:
         if val.title() == "Never":
             return update_pod_spec({"restartPolicy": val.title()})
-        warn(
-            f"restartPolicy '{val}' was dropped. Now the default of 'spec.backoffLimit' will implicitly try 6 times."
-        )
+        warn(f"restartPolicy '{val}' was dropped. Now the default of 'spec.backoffLimit' will implicitly try 6 times.")
         return result
 
     if ".run.restart.activeDeadlineSeconds" == key:
-        warn(
-            f'DKP has no equivalent for "run.restart.activeDeadlineSeconds", dropping: {val}'
-        )
+        warn(f'DKP has no equivalent for "run.restart.activeDeadlineSeconds", dropping: {val}')
         return result
 
     if re.match(".run.secrets", key):
@@ -354,9 +329,7 @@ def convert_ucr_to_docker(model):
     if not "docker" == model.pop(".run.ucr.image.kind", None):
         return
 
-    warn(
-        "Converting UCR configuration as .kind is 'docker'. Please check whether UCR is required for your use case."
-    )
+    warn("Converting UCR configuration as .kind is 'docker'. Please check whether UCR is required for your use case.")
     if ".run.ucr.image.forcePull" in model:
         model[".run.docker.forcePullImage"] = model.pop(".run.ucr.image.forcePull")
     if ".run.ucr.image.id" in model:
@@ -397,9 +370,7 @@ def translate(json_spec, args={}):
     # ensure an image is set
     if not "image" in plain_job["spec"]["template"]["spec"]["containers"][0]:
         if not args.image:
-            raise RuntimeError(
-                "Job does not specify an image; please specify an `--image` to use."
-            )
+            raise RuntimeError("Job does not specify an image; please specify an `--image` to use.")
         plain_job["spec"]["template"]["spec"]["containers"][0]["image"] = args.image
 
     if args.force_cronjob or any(schedule_props) > 0:
@@ -417,9 +388,7 @@ def translate(json_spec, args={}):
 
         return yaml.safe_dump(cron_job)
     else:
-        return yaml.safe_dump(
-            deep_merge(plain_job, {"apiVersion": "batch/v1", "kind": "Job"})
-        )
+        return yaml.safe_dump(deep_merge(plain_job, {"apiVersion": "batch/v1", "kind": "Job"}))
 
 
 def migrate(args):
@@ -447,9 +416,7 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help="sub-commands available")
 
-    translate_cmd = subparsers.add_parser(
-        "translate", help="Translate the Metronome Job into a K8s Job/CronJob"
-    )
+    translate_cmd = subparsers.add_parser("translate", help="Translate the Metronome Job into a K8s Job/CronJob")
     translate_cmd.add_argument("path", help="path to a Metronome JobSpec")
     translate_cmd.add_argument(
         "--image",
@@ -463,11 +430,10 @@ def main():
     translate_cmd.add_argument(
         "--force-cronjob",
         action="store_true",
-        help="Generate a CronJob, even if the source spec has no schedule specified. This might be helpful in the cases where you want to manually trigger JobRuns as you can't rerun a K8s-Job.",
+        help=
+        "Generate a CronJob, even if the source spec has no schedule specified. This might be helpful in the cases where you want to manually trigger JobRuns as you can't rerun a K8s-Job.",
     )
-    translate_cmd.add_argument(
-        "--working-dir", help="Needs to be set in case your Job used 'artifacts'"
-    )
+    translate_cmd.add_argument("--working-dir", help="Needs to be set in case your Job used 'artifacts'")
 
     translate_cmd.set_defaults(func=lambda args: migrate(args))
 

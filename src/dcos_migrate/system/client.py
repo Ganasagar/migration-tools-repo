@@ -5,16 +5,13 @@ from urllib.parse import urlparse, ParseResult
 
 class DCOSClient(object):
     """docstring for DCOSClient."""
-
     def __init__(self, toml_config: Optional[Any] = None):
         super(DCOSClient, self).__init__()
         self.toml_config = toml_config
         if toml_config is None:
             self.toml_config = config.get_config()
 
-        self._dcos_url = cast(
-            ParseResult, urlparse(config.get_config_val("core.dcos_url", toml_config))
-        )
+        self._dcos_url = cast(ParseResult, urlparse(config.get_config_val("core.dcos_url", toml_config)))
 
     @property
     def dcos_url(self) -> str:
@@ -32,13 +29,11 @@ class DCOSClient(object):
     def get(self, url: str, **kwargs: Any) -> http.requests.Response:
         return self.request("get", url, **kwargs)
 
-    def post(
-        self,
-        url: str,
-        data: Optional[Any] = None,
-        json: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
-    ) -> http.requests.Response:
+    def post(self,
+             url: str,
+             data: Optional[Any] = None,
+             json: Optional[Dict[str, Any]] = None,
+             **kwargs: Any) -> http.requests.Response:
         return self.request("post", url, data=data, json=json, **kwargs)
 
     def put(self, url: str, data: Optional[Any] = None, **kwargs: Any) -> http.requests.Response:

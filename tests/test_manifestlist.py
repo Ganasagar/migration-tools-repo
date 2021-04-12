@@ -10,12 +10,9 @@ def create_example_list_manifest(dir: str) -> ManifestList:
     b = "foobar"
     metadata = V1ObjectMeta(name="secret1")
     sec = V1Secret(metadata=metadata, kind="Secret", api_version="v1")
-    sec.data = {
-        "secret1": "Zm9vYmFy"
-    }
+    sec.data = {"secret1": "Zm9vYmFy"}
     d = [sec]
-    list.append(Manifest(pluginName=p,
-                         manifestName=b, data=d))
+    list.append(Manifest(pluginName=p, manifestName=b, data=d))
 
     list.store()
     return list, p, b, d

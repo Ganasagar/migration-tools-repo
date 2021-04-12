@@ -14,6 +14,7 @@ pytest = "*"
 mypy = "*"
 requests-mock = "*"
 pytest-snapshot = "*"
+yapf = "*"
 
 [requires]
 python_version = "3.8"

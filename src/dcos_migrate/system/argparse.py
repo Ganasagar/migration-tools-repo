@@ -4,7 +4,6 @@ from typing import Dict, Any, Optional, Union, Iterable, Callable, List
 
 class Arg(object):
     """docstring for Arg."""
-
     def __init__(self,
                  name: str,
                  alternatives: List[str] = [],
@@ -13,8 +12,7 @@ class Arg(object):
                  nargs: Union[int, str, None] = None,
                  epilog: str = '',
                  default: Optional[Any] = None,
-                 type: Optional[Union[Callable[[str], Any],
-                                      argparse.FileType]] = None,
+                 type: Optional[Union[Callable[[str], Any], argparse.FileType]] = None,
                  choices: Optional[Iterable[Any]] = None,
                  required: Optional[bool] = None,
                  help: str = '',
@@ -34,11 +32,11 @@ class Arg(object):
         self._metavar = metavar
         self._positional = positional
 
-    @ property
+    @property
     def plugin_name(self) -> Optional[str]:
         return self._plugin_name
 
-    @ property
+    @property
     def name(self) -> str:
         return self._name
 
@@ -89,25 +87,29 @@ class Arg(object):
 
 class BoolArg(Arg):
     """docstring for BoolArg."""
-
     def __init__(self, name: str, **kwargs: Any):
         super(BoolArg, self).__init__(name, **kwargs)
 
     def add_argument(self, parser: argparse.ArgumentParser) -> None:
         noarg = self.arg_name.replace("--", "--no-", 1)
-        parser.add_argument(noarg, action='store_false',
-                            default=self._default,
-                            required=self._required,  # type: ignore
-                            help=self._help, dest=self.attr_arg)
-        parser.add_argument(self.arg_name, action='store_true',
-                            default=self._default,
-                            required=self._required,  # type: ignore
-                            help=self._help, dest=self.attr_arg)
+        parser.add_argument(
+            noarg,
+            action='store_false',
+            default=self._default,
+            required=self._required,  # type: ignore
+            help=self._help,
+            dest=self.attr_arg)
+        parser.add_argument(
+            self.arg_name,
+            action='store_true',
+            default=self._default,
+            required=self._required,  # type: ignore
+            help=self._help,
+            dest=self.attr_arg)
 
 
 class DictArg(Arg):
     """docstring for BoolArg."""
-
     def __init__(self, name: str, **kwargs: Any):
         super(DictArg, self).__init__(name, **kwargs)
 
@@ -129,8 +131,8 @@ class DictArg(Arg):
 
 class ArgParse(object):
     """docstring for ArgParse."""
-
-    def __init__(self, args: List[Arg],
+    def __init__(self,
+                 args: List[Arg],
                  prog: str = 'dcos_migrate',
                  parser: Optional[argparse.ArgumentParser] = None,
                  usage: str = '',
@@ -139,9 +141,10 @@ class ArgParse(object):
         self.args = args
         self._parser: argparse.ArgumentParser
         if not parser:
-            self._parser = argparse.ArgumentParser(
-                prog=prog, usage=usage, epilog=epilog,
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+            self._parser = argparse.ArgumentParser(prog=prog,
+                                                   usage=usage,
+                                                   epilog=epilog,
+                                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         else:
             self._parser = parser
 

@@ -10,14 +10,11 @@ from .manifest_list import ManifestList
 
 class Migrator(object):
     """docstring for Migrator."""
-
-    def __init__(
-        self,
-        backup: Optional[Backup] = None,
-        backup_list: Optional[BackupList] = None,
-        manifest_list: Optional[ManifestList] = None,
-        object: Optional[Dict[str, Any]] = None
-    ):
+    def __init__(self,
+                 backup: Optional[Backup] = None,
+                 backup_list: Optional[BackupList] = None,
+                 manifest_list: Optional[ManifestList] = None,
+                 object: Optional[Dict[str, Any]] = None):
         super(Migrator, self).__init__()
         self.backup = backup
         self.object = object
@@ -36,9 +33,7 @@ class Migrator(object):
     def dnsify(self, name: str) -> str:
         new_name = utils.dnsify(name)
         if not name == new_name:
-            logging.info(
-                f'"{name}" is not a valid name in kubernetes. converted it to "{new_name}".'
-            )
+            logging.info(f'"{name}" is not a valid name in kubernetes. converted it to "{new_name}".')
         return new_name
 
     def migrate(self) -> Optional[Manifest]:
@@ -53,5 +48,5 @@ class Migrator(object):
         return self.manifest
 
     def noEquivalent(self, key: str, value: str, full_path: str) -> None:
-        logging.warning("No equivalent available for {full_path} with value {value}".format(
-            full_path=full_path, value=value))
+        logging.warning("No equivalent available for {full_path} with value {value}".format(full_path=full_path,
+                                                                                            value=value))

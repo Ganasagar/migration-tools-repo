@@ -26,7 +26,8 @@ def with_comment(object_cls: Type[object]) -> Type[object]:
         if any(k == method for k, _ in inspect.getmembers(object_cls)):
             raise Exception("{} already defines '{}'".format(object_cls.__name__, method))
 
-    class ObjectWithComment(object_cls): # type: ignore # https://github.com/python/mypy/issues/5865
+    class ObjectWithComment(object_cls  # type: ignore # https://github.com/python/mypy/issues/5865
+                            ):
         def set_comment(self, comment: Iterable[str]) -> None:
             self.__comment = comment
 
@@ -52,10 +53,7 @@ def _extract_comment(obj: Any) -> str:
 
 class Manifest(List[Any]):
     """docstring for Manifest."""
-
-    def __init__(
-        self, pluginName: str, manifestName: str = "", data: List[Any] = [], extension: str = 'yaml'
-    ):
+    def __init__(self, pluginName: str, manifestName: str = "", data: List[Any] = [], extension: str = 'yaml'):
         super(Manifest, self).__init__(data)
         self._plugin_name = pluginName
         self._name = manifestName
@@ -72,8 +70,7 @@ class Manifest(List[Any]):
             doc = kc.sanitize_for_serialization(d)
             orderedDoc = {}
             # specify the key order: a,k,m,s/d
-            for k in ['apiVersion', 'kind', 'metadata', 'type',
-                      'spec', 'data', 'stringData']:
+            for k in ['apiVersion', 'kind', 'metadata', 'type', 'spec', 'data', 'stringData']:
                 if k in doc.keys():
                     orderedDoc[k] = doc[k]
 
@@ -120,8 +117,7 @@ class Manifest(List[Any]):
         for dsi in dload:
             ds = dict(dsi)
             if ds is None:
-                logging.warning(
-                    "serialized object is none of data: {}".format(data))
+                logging.warning("serialized object is none of data: {}".format(data))
                 continue
 
             if 'apiVersion' in ds and 'kind' in ds:
@@ -132,8 +128,7 @@ class Manifest(List[Any]):
                     self.append(di)
                 continue
             else:
-                logging.warning(
-                    "Missing apiVersion and/or kind in data: {}".format(ds))
+                logging.warning("Missing apiVersion and/or kind in data: {}".format(ds))
 
             self.append(ds)
 
@@ -149,9 +144,7 @@ class Manifest(List[Any]):
                 return cls[1]
         return None
 
-    def findall_by_annotation(
-        self, annotation: str, value: Optional[str] = None
-    ) -> Optional[List[str]]:
+    def findall_by_annotation(self, annotation: str, value: Optional[str] = None) -> Optional[List[str]]:
         rs = []
         for r in self.resources:
             for a, v in r.metadata.annotations.items():

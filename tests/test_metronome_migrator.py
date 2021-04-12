@@ -1,6 +1,6 @@
 from dcos_migrate.plugins.metronome import MetronomeMigrator
 from dcos_migrate.system import ManifestList, Manifest
-from kubernetes.client.models import V1ConfigMap, V1ObjectMeta  # type: ignore
+from kubernetes.client.models import V1ConfigMap, V1ObjectMeta, V1Secret  # type: ignore
 
 from base64 import b64encode
 import json
@@ -19,16 +19,23 @@ def create_manifest_list_cluster() -> ManifestList:
     # models do not set defaults -.-
     cfgmap.kind = "ConfigMap"
     cfgmap.api_version = "v1"
-    cfgmap.data = {
-        "MESOS_MASTER_STATE_SUMMARY_BASE64": b64encode(
-            json.dumps({"foo": "bar"}).encode("ascii")
-        )
-    }
+    cfgmap.data = {"MESOS_MASTER_STATE_SUMMARY_BASE64": b64encode(json.dumps({"foo": "bar"}).encode("ascii"))}
 
     manifest = Manifest(pluginName="cluster", manifestName="dcos-cluster")
     manifest.append(cfgmap)
 
     ml.append(manifest)
+
+    secret = Manifest(pluginName="secret", manifestName="hello-world.secret")
+
+    sec = V1Secret(metadata=V1ObjectMeta(name="hello-world.secret", annotations=metadata.annotations))
+    sec.api_version = 'v1'
+    sec.kind = 'Secret'
+    sec.data = {"hello-world.secret": "Zm9vYmFy"}
+
+    secret.append(sec)
+
+    ml.append(secret)
 
     return ml
 

@@ -7,7 +7,6 @@ import copy
 
 class ManifestList(StorableList):
     """docstring for ManifestList."""
-
     def __init__(self, dry: bool = False, path: str = './dcos-migrate/migrate'):
         super(ManifestList, self).__init__(path)
         self._dry = dry
@@ -38,10 +37,9 @@ class ManifestList(StorableList):
 
         return ml
 
-    def append_data(self, pluginName: str, backupName: str,  # type: ignore
-                    extension: str, data: str, **kw) -> None:
-        b = Manifest(pluginName=pluginName, manifestName=backupName,
-                     extension=extension)
+    def append_data(  # type: ignore
+            self, pluginName: str, backupName: str, extension: str, data: str, **kw) -> None:
+        b = Manifest(pluginName=pluginName, manifestName=backupName, extension=extension)
         b.deserialize(data)
 
         self.append(b)

@@ -33,9 +33,7 @@ class TestEdgeLB(object):
             assert edgelb.parse_pool(pool)
         assert not warnings, [str(warning.message) for warning in warnings]
 
-    @pytest.mark.parametrize(
-        "pool", ("sample-mesos-framework",), indirect=True
-    )
+    @pytest.mark.parametrize("pool", ("sample-mesos-framework", ), indirect=True)
     def test_parse_tcp(self, pool):
         with pytest.warns(None) as warnings:
             p = edgelb.parse_pool(pool)
@@ -46,7 +44,10 @@ class TestEdgeLB(object):
             "backends": {
                 "stats-backend": {
                     "balance": "roundrobin",
-                    "service": {"name": "UNKNOWN", "port": "9090"},
+                    "service": {
+                        "name": "UNKNOWN",
+                        "port": "9090"
+                    },
                 }
             },
             "frontends": {
@@ -67,7 +68,7 @@ class TestEdgeLB(object):
         messages = [str(warning.message) for warning in warnings]
         assert any(m for m in messages if "portName" in m), messages
 
-    @pytest.mark.parametrize("pool", ("pool-http",), indirect=True)
+    @pytest.mark.parametrize("pool", ("pool-http", ), indirect=True)
     def test_parse_http(self, pool):
         with pytest.warns(None) as warnings:
             p = edgelb.parse_pool(pool)
@@ -78,11 +79,17 @@ class TestEdgeLB(object):
             "backends": {
                 "bridge-nginx": {
                     "balance": "roundrobin",
-                    "service": {"name": "bridge-nginx", "port": "web"},
+                    "service": {
+                        "name": "bridge-nginx",
+                        "port": "web"
+                    },
                 },
                 "host-httpd": {
                     "balance": "roundrobin",
-                    "service": {"name": "host-httpd", "port": "web"},
+                    "service": {
+                        "name": "host-httpd",
+                        "port": "web"
+                    },
                 },
             },
             "frontends": {
@@ -92,7 +99,10 @@ class TestEdgeLB(object):
                     "name": "frontend_0.0.0.0_80",
                     "port": 80,
                     "protocol": "HTTP",
-                    "rules": [{"backend": "host-httpd", "path": "/httpd/.*"}],
+                    "rules": [{
+                        "backend": "host-httpd",
+                        "path": "/httpd/.*"
+                    }],
                 }
             },
             "name": "test-http-pool",
@@ -117,9 +127,7 @@ class TestMigrator(object):
         else:
             assert not warnings, messages
 
-    @pytest.mark.parametrize(
-        "pool", ("sample-mesos-framework",), indirect=True
-    )
+    @pytest.mark.parametrize("pool", ("sample-mesos-framework", ), indirect=True)
     def test_parse_tcp(self, pool):
         bl = system.BackupList()
 
@@ -149,15 +157,19 @@ class TestMigrator(object):
                     "name": "framework-pool",
                 },
                 "spec": {
-                    "ports": [
-                        {"port": 1025, "protocol": "TCP", "targetPort": 0}
-                    ],
-                    "selector": {"app": "UNKNOWN"},
+                    "ports": [{
+                        "port": 1025,
+                        "protocol": "TCP",
+                        "targetPort": 0
+                    }],
+                    "selector": {
+                        "app": "UNKNOWN"
+                    },
                     "type": "LoadBalancer",
                 },
             }
 
-    @pytest.mark.parametrize("pool", ("pool-http",), indirect=True)
+    @pytest.mark.parametrize("pool", ("pool-http", ), indirect=True)
     def test_parse_http(self, pool):
         bl = system.BackupList()
 
@@ -183,24 +195,22 @@ class TestMigrator(object):
                 "apiVersion": "extensions/v1beta1",
                 "kind": "Ingress",
                 "metadata": {
-                    "annotations": {"kubernetes.io/ingress.class": "traefik"},
+                    "annotations": {
+                        "kubernetes.io/ingress.class": "traefik"
+                    },
                     "name": "test-http-pool",
                 },
                 "spec": {
-                    "rules": [
-                        {
-                            "http": {
-                                "paths": [
-                                    {
-                                        "backend": {
-                                            "serviceName": "host-httpd",
-                                            "servicePort": "web",
-                                        },
-                                        "path": "/httpd/.*",
-                                    }
-                                ]
-                            }
+                    "rules": [{
+                        "http": {
+                            "paths": [{
+                                "backend": {
+                                    "serviceName": "host-httpd",
+                                    "servicePort": "web",
+                                },
+                                "path": "/httpd/.*",
+                            }]
                         }
-                    ]
+                    }]
                 },
             }

@@ -42,7 +42,7 @@ def parse_backup_restore_params(args) -> dict:
         parsed_params["CASSANDRA_KEYSPACES"] = args.keyspaces
 
     return parsed_params
-    
+
 
 def download(args):
     log.info('Downloading DC/OS package with app id {} of version {} into target directory {}'.format(
@@ -55,10 +55,9 @@ def download(args):
 
 def install(args):
     log.info('Translating Mesos configurations to K8s configurations')
-    is_ok = translate.translate_mesos_to_k8s(args.config_file, args.target_file)
+    is_ok = translate.translate_mesos_to_k8s(args.namespace, args.target_dir, args.config_file, args.target_file)
     if is_ok:
-        translate.print_instructions(
-            args.namespace, args.instance, args.target_file, args.operator_version)
+        translate.print_instructions(args.namespace, args.instance, args.target_file, args.operator_version)
 
 
 def migrate(args):
@@ -79,23 +78,51 @@ def main():
 
     # Dummy parent parser to share common global level args
     parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument("-t", "--target-dir", type=str, default="./cassandra_home",
-                               help='Folder to hold configuration of running DC/OS Cassandra service (defaults to ./cassandra_home)')
+    parent_parser.add_argument(
+        "-t",
+        "--target-dir",
+        type=str,
+        default="./cassandra_home",
+        help='Folder to hold configuration of running DC/OS Cassandra service (defaults to ./cassandra_home)')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version='0.0.1-dev')
     subparsers = parser.add_subparsers(help='sub-commands available')
 
     # Step 1 : Backup the DC/OS Cassandra tasks data
-    backup_cmd = subparsers.add_parser("backup", help='Backup the DC/OS package configurations and data', parents=[parent_parser])
+    backup_cmd = subparsers.add_parser("backup",
+                                       help='Backup the DC/OS package configurations and data',
+                                       parents=[parent_parser])
     backup_cmd.add_argument("--app-id", type=str, default="cassandra", help="Service Name (defaults to cassandra)")
-    backup_cmd.add_argument("--only-conf", type=bool, default=False, help="Set True if only service configuration is required, no data backup (defaults to False)")
-    backup_cmd.add_argument("--app-version", type=str, default="2.10.0-3.11.6", help="Service Version (defaults to 2.10.0-3.11.6)")
-    backup_cmd.add_argument("--snapshot-name", type=str, default="", help="Snapshot or Backup Name (required, not applicable if --only-conf=True)")
-    backup_cmd.add_argument("--bucket-name", type=str, default="", help="S3 Bucket Name, without s3:// prefix (required, not applicable if --only-conf=True)")
-    backup_cmd.add_argument("--keyspaces", type=str, default="", help="Comma separated list of keyspace names for the Backup")
-    backup_cmd.add_argument("--aws-key", type=str, default="", help="AWS Access Key ID (required, not applicable if --only-conf=True)")
-    backup_cmd.add_argument("--aws-secret", type=str, default="", help="AWS Secret Access Key (required, not applicable if --only-conf=True)")
+    backup_cmd.add_argument(
+        "--only-conf",
+        type=bool,
+        default=False,
+        help="Set True if only service configuration is required, no data backup (defaults to False)")
+    backup_cmd.add_argument("--app-version",
+                            type=str,
+                            default="2.10.0-3.11.6",
+                            help="Service Version (defaults to 2.10.0-3.11.6)")
+    backup_cmd.add_argument("--snapshot-name",
+                            type=str,
+                            default="",
+                            help="Snapshot or Backup Name (required, not applicable if --only-conf=True)")
+    backup_cmd.add_argument("--bucket-name",
+                            type=str,
+                            default="",
+                            help="S3 Bucket Name, without s3:// prefix (required, not applicable if --only-conf=True)")
+    backup_cmd.add_argument("--keyspaces",
+                            type=str,
+                            default="",
+                            help="Comma separated list of keyspace names for the Backup")
+    backup_cmd.add_argument("--aws-key",
+                            type=str,
+                            default="",
+                            help="AWS Access Key ID (required, not applicable if --only-conf=True)")
+    backup_cmd.add_argument("--aws-secret",
+                            type=str,
+                            default="",
+                            help="AWS Secret Access Key (required, not applicable if --only-conf=True)")
     backup_cmd.add_argument("--aws-session-id", type=str, default="", help="AWS Session ID")
     backup_cmd.add_argument("--aws-session-token", type=str, default="", help="AWS Session Token")
     backup_cmd.add_argument("--aws-region", type=str, default="us-west-2", help="AWS Region (defautls to us-west-2)")
@@ -103,21 +130,47 @@ def main():
     backup_cmd.set_defaults(func=download)
 
     # Step 2 : Migrate the configs from DC/OS Cassandra format to KUDO Cassandra format and print install instructions
-    install_cmd = subparsers.add_parser("install",
-                                        help='Translate the DC/OS based configs to KUDO based configs and print install instructions.')
-    install_cmd.add_argument("-c", "--config-file", type=str, default="./cassandra_home/cassandra_env.json", help="Path of the cassandra env file generated by backup command. (defaults to ./cassandra_home/cassandra_env.json)")
-    install_cmd.add_argument("-t", "--target-file", type=str, default="./cassandra_home/params.yml", help="Path of the target params file (defaults to ./cassandra_home/params.yml)")
-    install_cmd.add_argument("--namespace", type=str, default="default", help="Namespace of the cassandra pods (defaults to default)")
-    install_cmd.add_argument("--instance", type=str, default="cassandra-instance",
+    install_cmd = subparsers.add_parser(
+        "install",
+        help='Translate the DC/OS based configs to KUDO based configs and print install instructions.',
+        parents=[parent_parser])
+    install_cmd.add_argument(
+        "-c",
+        "--config-file",
+        type=str,
+        default="./cassandra_home/cassandra_env.json",
+        help=
+        "Path of the cassandra env file generated by backup command. (defaults to ./cassandra_home/cassandra_env.json)"
+    )
+    install_cmd.add_argument("-f",
+                             "--target-file",
+                             type=str,
+                             default="./cassandra_home/params.yml",
+                             help="Path of the target params file (defaults to ./cassandra_home/params.yml)")
+    install_cmd.add_argument("--namespace",
+                             type=str,
+                             default="default",
+                             help="Namespace of the cassandra pods (defaults to default)")
+    install_cmd.add_argument("--instance",
+                             type=str,
+                             default="cassandra-instance",
                              help="Name of the Cassandra Kudo installation (defaults to cassandra-instance)")
-    install_cmd.add_argument("--operator-version", type=str, default="0.1.2", help="Kudo Cassandra version (defaults to 0.1.2)")
+    install_cmd.add_argument("--operator-version",
+                             type=str,
+                             default="0.1.2",
+                             help="Kudo Cassandra version (defaults to 0.1.2)")
     install_cmd.set_defaults(func=install)
 
     # Step 3 : Migrate the schema and data from DC/OS Cassandra to KUDO Cassandra
-    migrate_cmd = subparsers.add_parser("migrate",
-                                        help='Restore the Schema and Data from the backup of DC/OS Cassandra to KUDO Cassandra')
-    migrate_cmd.add_argument("--namespace", type=str, default="default", help="Namespace of the cassandra pods (defaults to default)")
-    migrate_cmd.add_argument("--instance", type=str, default="cassandra-instance",
+    migrate_cmd = subparsers.add_parser(
+        "migrate", help='Restore the Schema and Data from the backup of DC/OS Cassandra to KUDO Cassandra')
+    migrate_cmd.add_argument("--namespace",
+                             type=str,
+                             default="default",
+                             help="Namespace of the cassandra pods (defaults to default)")
+    migrate_cmd.add_argument("--instance",
+                             type=str,
+                             default="cassandra-instance",
                              help="Name of the Cassandra Kudo installation (defaults to cassandra-instance)")
     migrate_cmd.add_argument("--count", type=int, default=3, help="Count of the cassandra node (defaults to 3)")
     migrate_cmd.add_argument("--snapshot-name", type=str, required=True, help="Snapshot or Backup Name")

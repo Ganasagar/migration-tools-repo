@@ -25,13 +25,13 @@ spec:
             - name: MyVAR
               valueFrom:
                 secretKeyRef:
-                  key: mySecret
-                  name: TODO_ref
+                  key: secret0
+                  name: jobsecret.hello-world
             - name: envKey
               value: envVal
             image: alpine
             imagePullPolicy: Always
-            name: hello-world
+            name: job
             resources:
               limits:
                 cpu: 1
@@ -68,3 +68,15 @@ spec:
             emptyDir: {}
   schedule: '*/5 * * * *'
   suspend: false
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    migration.dcos.d2iq.com/cluster-id: test-1234-test-test
+    migration.dcos.d2iq.com/cluster-name: testcluster
+    migration.dcos.d2iq.com/backup-date: '2021-01-25'
+  name: jobsecret.hello-world
+data:
+  secret0: Zm9vYmFy

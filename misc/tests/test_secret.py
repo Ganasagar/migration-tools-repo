@@ -110,51 +110,31 @@ class TestSecrets:
 
             # key1: value1
             value1 = 'value1'
-            cli.exec_command(
-                ['dcos', 'security', 'secrets', 'create', '--value', value1, 'key1']
-            )
+            cli.exec_command(['dcos', 'security', 'secrets', 'create', '--value', value1, 'key1'])
 
             # folder/key2: value2
             value2 = 'value2\n'
             secret2 = tmp_path / 'file2'
             secret2.write_text(value2)
-            cli.exec_command([
-                'dcos',
-                'security',
-                'secrets',
-                'create',
-                '--text-file',
-                str(secret2),
-                'folder/key2'
-            ])
+            cli.exec_command(['dcos', 'security', 'secrets', 'create', '--text-file', str(secret2), 'folder/key2'])
 
             # folder/key3: value3 (binary)
             value3 = b'value\x85\xff3'
             secret3 = tmp_path / 'file3'
             secret3.write_bytes(value3)
-            cli.exec_command([
-                'dcos', 'security', 'secrets', 'create', '--file', str(secret3), 'folder/key3'
-            ])
+            cli.exec_command(['dcos', 'security', 'secrets', 'create', '--file', str(secret3), 'folder/key3'])
 
             # folder/sub/key4: sa-account-details
             secret4 = tmp_path / 'file.pem'
             secret4.write_text(PRIVATE_KEY)
-            cli.exec_command([
-                'dcos',
-                'security',
-                'secrets',
-                'create-sa-secret',
-                str(secret4),
-                'dcos-service',
-                'folder/sub/key4'
-            ])
+            cli.exec_command(
+                ['dcos', 'security', 'secrets', 'create-sa-secret',
+                 str(secret4), 'dcos-service', 'folder/sub/key4'])
 
             # The DC/OS Secrets Service permits a secret to exist at the same path as a folder.
             # key5: value5
             value5 = 'value5'
-            cli.exec_command(
-                ['dcos', 'security', 'secrets', 'create', '--value', value5, 'folder/sub']
-            )
+            cli.exec_command(['dcos', 'security', 'secrets', 'create', '--value', value5, 'folder/sub'])
 
             # Setup DCOSSecretsService client
 
@@ -166,9 +146,7 @@ class TestSecrets:
 
             # `list` returns all keys below the folder
             response = s.list('')
-            assert response == [
-                'folder/key2', 'folder/key3', 'folder/sub', 'folder/sub/key4', 'key1'
-            ]
+            assert response == ['folder/key2', 'folder/key3', 'folder/sub', 'folder/sub/key4', 'key1']
 
             response = s.list('folder')
             assert response == ['key2', 'key3', 'sub', 'sub/key4']
@@ -278,12 +256,7 @@ class TestSecrets:
             assert keys == {'key1', 'folder/key2', 'folder/key3', 'folder/sub', 'folder/sub/key4'}
 
             dcosfile2 = tmp_path / 'output-2'
-            backup.run([
-                '--dcos-cli', cli.path,
-                '--no-verify',
-                '--path', 'folder',
-                '--output', str(dcosfile2)
-                ])
+            backup.run(['--dcos-cli', cli.path, '--no-verify', '--path', 'folder', '--output', str(dcosfile2)])
             assert stat.S_IMODE(dcosfile2.stat().st_mode) == 0o600
             with dcosfile2.open() as f:
                 response = json.load(f)
@@ -293,12 +266,7 @@ class TestSecrets:
             # When backing up a path that is a secret and a folder, only the secrets under the
             # folder are exported, not the secret at the named path.
             dcosfile3 = tmp_path / 'output-3'
-            backup.run([
-                '--dcos-cli', cli.path,
-                '--no-verify',
-                '--path', 'folder/sub',
-                '--output', str(dcosfile3)
-            ])
+            backup.run(['--dcos-cli', cli.path, '--no-verify', '--path', 'folder/sub', '--output', str(dcosfile3)])
             assert stat.S_IMODE(dcosfile3.stat().st_mode) == 0o600
             with dcosfile3.open() as f:
                 response = json.load(f)
@@ -308,11 +276,7 @@ class TestSecrets:
             # The command will not work without a CA flag as the test DC/OS cluster CA is not in the
             # system CA bundle.
             with pytest.raises(requests.exceptions.SSLError):
-                backup.run([
-                    '--dcos-cli', cli.path,
-                    '--path', 'folder/sub/key4',
-                    '--output', str(dcosfile3)
-                ])
+                backup.run(['--dcos-cli', cli.path, '--path', 'folder/sub/key4', '--output', str(dcosfile3)])
 
             # Download the CA certificate for the cluster to verify subsequent connections. Since we
             # don't yet have the CA certificate, this request cannot be verified (and hence is
@@ -325,10 +289,9 @@ class TestSecrets:
 
             dcosfile4 = tmp_path / 'output-4'
             backup.run([
-                '--dcos-cli', cli.path,
-                '--ca-file', str(ca_path),
-                '--path', 'folder/sub/key4',
-                '--output', str(dcosfile4)
+                '--dcos-cli', cli.path, '--ca-file',
+                str(ca_path), '--path', 'folder/sub/key4', '--output',
+                str(dcosfile4)
             ])
             assert stat.S_IMODE(dcosfile4.stat().st_mode) == 0o600
             with dcosfile4.open() as f:
@@ -343,16 +306,12 @@ class TestSecrets:
         # Multiple secrets
         k8s_secret_name = 'mysecrets'
         k8sfile = tmp_path / 'output-1k'
-        migrate.run([
-            '--input', str(dcosfile1), '--output', str(k8sfile), '--name', k8s_secret_name
-        ])
+        migrate.run(['--input', str(dcosfile1), '--output', str(k8sfile), '--name', k8s_secret_name])
         assert stat.S_IMODE(k8sfile.stat().st_mode) == 0o600
         with k8sfile.open() as f:
             response = json.load(f)
         assert response['metadata']['labels'][DCOS_PREFIX + '/dcos-cluster-id'] == dcos_cluster_id
-        assert sorted(
-            json.loads(response['metadata']['annotations'][DCOS_PREFIX + '/dcos-secret']).items()
-        ) == [
+        assert sorted(json.loads(response['metadata']['annotations'][DCOS_PREFIX + '/dcos-secret']).items()) == [
             ('folder/key2', 'folder.key2'),
             ('folder/key3', 'folder.key3'),
             ('folder/sub', 'folder.sub'),
@@ -365,9 +324,7 @@ class TestSecrets:
         # Single secret
         k8s_secret_name_4 = 'mysecrets4'
         k8sfile_4 = tmp_path / 'output-4k'
-        migrate.run([
-            '--input', str(dcosfile4), '--output', str(k8sfile_4), '--name', k8s_secret_name_4
-        ])
+        migrate.run(['--input', str(dcosfile4), '--output', str(k8sfile_4), '--name', k8s_secret_name_4])
         assert stat.S_IMODE(k8sfile_4.stat().st_mode) == 0o600
         with k8sfile_4.open() as f:
             response = json.load(f)
@@ -384,80 +341,44 @@ class TestSecrets:
         kind_context = 'kind-{}'.format(kind_name)
 
         kubeconfig_path = tmp_path / 'kubeconfig'
-        subprocess.run([
-            str(kind_path),
-            'create',
-            'cluster',
-            '--name',
-            kind_name,
-            '--kubeconfig',
-            str(kubeconfig_path)
-        ])
+        subprocess.run(
+            [str(kind_path), 'create', 'cluster', '--name', kind_name, '--kubeconfig',
+             str(kubeconfig_path)])
         try:
-            p = subprocess.run(
-                [
-                    str(kubectl_path),
-                    '--kubeconfig',
-                    str(kubeconfig_path),
-                    '--context',
-                    kind_context,
-                    'apply',
-                    '--filename',
-                    str(k8sfile)
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                check=True
-            )
+            p = subprocess.run([
+                str(kubectl_path), '--kubeconfig',
+                str(kubeconfig_path), '--context', kind_context, 'apply', '--filename',
+                str(k8sfile)
+            ],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               check=True)
             assert b'secret/mysecrets created' in p.stdout
 
             # Check that the Secret resource has the expected keys and values.
-            p = subprocess.run(
-                [
-                    str(kubectl_path),
-                    '--kubeconfig',
-                    str(kubeconfig_path),
-                    '--context',
-                    kind_context,
-                    'get',
-                    'secret',
-                    k8s_secret_name,
-                    '-o',
-                    'jsonpath={.data.key1}'
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                check=True
-            )
+            p = subprocess.run([
+                str(kubectl_path), '--kubeconfig',
+                str(kubeconfig_path), '--context', kind_context, 'get', 'secret', k8s_secret_name, '-o',
+                'jsonpath={.data.key1}'
+            ],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               check=True)
             assert base64.b64decode(p.stdout.decode('ascii')).decode('utf-8') == value1
 
             # Check that we can search for secrets by cluster id and find the original DC/OS path
             # for a secret.
-            p = subprocess.run(
-                [
-                    str(kubectl_path),
-                    '--kubeconfig',
-                    str(kubeconfig_path),
-                    '--context',
-                    kind_context,
-                    'get',
-                    'secrets',
-                    '-l',
-                    '{}/dcos-cluster-id={}'.format(DCOS_PREFIX, dcos_cluster_id),
-                    '-o',
-                    'json'
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                check=True
-            )
+            p = subprocess.run([
+                str(kubectl_path), '--kubeconfig',
+                str(kubeconfig_path), '--context', kind_context, 'get', 'secrets', '-l',
+                '{}/dcos-cluster-id={}'.format(DCOS_PREFIX, dcos_cluster_id), '-o', 'json'
+            ],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               check=True)
             items = json.loads(p.stdout.decode('utf-8'))['items']
             assert len(items) == 1
-            reverse_map = json.loads(
-                items[0]['metadata']['annotations'][DCOS_PREFIX + '/dcos-secret']
-            )
+            reverse_map = json.loads(items[0]['metadata']['annotations'][DCOS_PREFIX + '/dcos-secret'])
             assert reverse_map['folder/sub/key4'] == 'folder.sub.key4'
         finally:
-            subprocess.run([
-                str(kind_path), 'delete', 'cluster', '--kubeconfig', str(kubeconfig_path)
-            ])
+            subprocess.run([str(kind_path), 'delete', 'cluster', '--kubeconfig', str(kubeconfig_path)])

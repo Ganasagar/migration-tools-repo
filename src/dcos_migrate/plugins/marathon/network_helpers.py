@@ -78,10 +78,14 @@ def effective_port(port: AppPort) -> int:
 def get_ports_from_app(app: Dict[str, Any]) -> Sequence[AppPort]:
     if "portDefinitions" in app:
         require_ports = app.get("requirePorts", False)
-        return [__derive_port_from_port_definition(port_definition, i, require_ports) for i, port_definition in
-                enumerate(app["portDefinitions"])]
+        return [
+            __derive_port_from_port_definition(port_definition, i, require_ports)
+            for i, port_definition in enumerate(app["portDefinitions"])
+        ]
     elif "container" in app and "portMappings" in app["container"]:
-        return [__derive_port_from_port_mapping(port_mapping, i) for i, port_mapping in
-                enumerate(app["container"]["portMappings"])]
+        return [
+            __derive_port_from_port_mapping(port_mapping, i)
+            for i, port_mapping in enumerate(app["container"]["portMappings"])
+        ]
     else:
         return []

@@ -19,19 +19,21 @@ def _fetch_tasks_envs(app_id: str, task_count: int) -> dict:
         log.info("Downloading configuration from task: {}".format(task_name))
         _, out, err = run_cmd("{} task exec {} bash -c 'env'".format(DCOS, task_name))
         for env in out.split('\n'):
-            key,value = env.split('=')
+            key, value = env.split('=')
             if key not in envs:
                 envs[key] = [value]
             else:
                 envs[key].append(value)
+        _, out, err = run_cmd("{} task exec {} bash -c 'cat $MESOS_SANDBOX/new_user_password'".format(DCOS, task_name))
+        envs["NEW_USER_PASSWORD"] = out
     return envs
 
 
 def _sanitize_and_merge_envs(app_env: dict, task_env: dict) -> dict:
     envs = {}
-    for (k,v) in app_env.items():
+    for (k, v) in app_env.items():
         envs[remove_prefix(k, "TASKCFG_ALL_")] = v
-    for (k,v) in task_env.items():
+    for (k, v) in task_env.items():
         if v.count(v[0]) == len(v):
             v = v[0]
         envs[remove_prefix(k, "TASKCFG_ALL_")] = v
@@ -72,7 +74,8 @@ def download_dcos_package(app_id: str, target_dir: str, version: str):
     app = json.loads(out, encoding=encoding)
     os.makedirs(target_dir, exist_ok=True)
     if len(os.listdir(target_dir)) != 0:
-        log.fatal('Provided directory "{}" is not empty. Use an empty directory to prevent data corruption.'.format(target_dir))
+        log.fatal('Provided directory "{}" is not empty. Use an empty directory to prevent data corruption.'.format(
+            target_dir))
     with open(os.path.join(target_dir, MARATHON_JSON), "w+") as f:
         f.write(out)
     DCOS_PACKAGE_NAME = app["labels"]["DCOS_PACKAGE_NAME"]
@@ -88,7 +91,7 @@ def download_dcos_package(app_id: str, target_dir: str, version: str):
     if len(app["tasks"]) == 0:
         log.error("No Task Found")
         return
-    
+
     tasks_envs = _fetch_tasks_envs(app_id, int(app["env"]["NODES"]))
     app_envs = _sanitize_and_merge_envs(app["env"], tasks_envs)
 

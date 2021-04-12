@@ -3,7 +3,6 @@ from typing import List
 
 DCOS_MIGRATE_NAMESPACE = "migration.dcos.d2iq.com"
 
-
 _invalid_label = re.compile('[^-a-zA-Z0-9]')
 
 

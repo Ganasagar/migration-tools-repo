@@ -42,7 +42,6 @@ class TrackingAppSecretMapping(AppSecretMapping):
     Tracks which secrets are used by callers of `AppSecretMapping` interface
     and reports them via `get_secrets_to_remap()`.
     """
-
     def __init__(
         self,
         app_id: str,
@@ -50,24 +49,19 @@ class TrackingAppSecretMapping(AppSecretMapping):
     ):
         self._app_secrets = app_secrets
 
-        self._generic_remapping = SecretRemapping(
-            dest_name="marathonsecret-{}".format(utils.dnsify(app_id)),
-            dest_type=None,
-            key_mapping={}
-        )
+        self._generic_remapping = SecretRemapping(dest_name="marathonsecret-{}".format(utils.dnsify(app_id)),
+                                                  dest_type=None,
+                                                  key_mapping={})
 
-        self._image_pull_remapping = SecretRemapping(
-            dest_name="marathonpullcfgsecret-{}".format(utils.dnsify(app_id)),
-            dest_type="kubernetes.io/dockerconfigjson",
-            key_mapping={}
-        )
+        self._image_pull_remapping = SecretRemapping(dest_name="marathonpullcfgsecret-{}".format(utils.dnsify(app_id)),
+                                                     dest_type="kubernetes.io/dockerconfigjson",
+                                                     key_mapping={})
 
     def __get_k8s_secret_key(self, app_secret_name: str) -> str:
         try:
             dcos_name = self._app_secrets[app_secret_name]['source']
         except KeyError:
-            raise InvalidAppDefinition(
-                'No source specified for a secret "{}"'.format(app_secret_name))
+            raise InvalidAppDefinition('No source specified for a secret "{}"'.format(app_secret_name))
 
         return utils.dnsify(dcos_name)
 
@@ -81,9 +75,8 @@ class TrackingAppSecretMapping(AppSecretMapping):
 
         existing = next(iter(self._image_pull_remapping.key_mapping), None)
         if existing not in (None, k8s_key):
-            raise Exception(
-                "`get_image_pull_secret_reference()` called for two different secrets ({} and {})."
-                " This is a bug.".format(existing, k8s_key))
+            raise Exception("`get_image_pull_secret_reference()` called for two different secrets ({} and {})."
+                            " This is a bug.".format(existing, k8s_key))
 
         self._image_pull_remapping.key_mapping[k8s_key] = ".dockerconfigjson"
         return self._image_pull_remapping.dest_name

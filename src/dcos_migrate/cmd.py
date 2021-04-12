@@ -10,25 +10,16 @@ from dcos_migrate.plugins.plugin_manager import PluginManager
 class DCOSMigrate(object):
     """docstring for DCOSMigrate."""
 
-    phases_choices = ["all", "backup", "backup_data",
-                      "migrate", "migrate_data"]
+    phases_choices = ["all", "backup", "backup_data", "migrate", "migrate_data"]
 
     config_defaults = [
-        Arg(
-            name="phase",
+        Arg(name="phase",
             nargs="?",
             choices=phases_choices,
             default="all",
             positional=True,
-            help="phase to start with."
-        ),
-        Arg(
-            name="verbose",
-            alternatives=["-v"],
-            action="count",
-            default=0,
-            help="log verbosity. Default to critical"
-        )
+            help="phase to start with."),
+        Arg(name="verbose", alternatives=["-v"], action="count", default=0, help="log verbosity. Default to critical")
     ]
 
     def __init__(self) -> None:
@@ -43,11 +34,11 @@ class DCOSMigrate(object):
         self.argparse = ArgParse(
             config,
             prog='dcos-migrate',
-            usage='Does a backup of your DC/OS cluster and migrates everything into K8s Manifests'
-        )
+            usage='Does a backup of your DC/OS cluster and migrates everything into K8s Manifests')
 
-        self.phases: List[Callable[[Optional[str], bool], None]] = [self.initPhase, self.backup, self.backup_data,
-                                                                    self.migrate, self.migrate_data]
+        self.phases: List[Callable[[Optional[str], bool], None]] = [
+            self.initPhase, self.backup, self.backup_data, self.migrate, self.migrate_data
+        ]
 
     @property
     def selected_phase(self) -> int:
@@ -70,18 +61,16 @@ class DCOSMigrate(object):
             p(None, False)
 
             if self.selected_phase and self.selected_phase == i:
-                return self._end_process(
-                    "selected phase {} reached".format(self.phases_choices[i]))
+                return self._end_process("selected phase {} reached".format(self.phases_choices[i]))
 
         return 0
 
     def handleGlobal(self) -> None:
         """handle global config before starting the process"""
-        levels = [logging.CRITICAL, logging.WARNING,
-                  logging.INFO, logging.DEBUG]
+        levels = [logging.CRITICAL, logging.WARNING, logging.INFO, logging.DEBUG]
 
         v = self.pm.config['global'].get('verbose', 0)
-        level = levels[min(len(levels)-1, v)]
+        level = levels[min(len(levels) - 1, v)]
         logging.basicConfig(level=level, force=True)
 
     def handleArgparse(self, args: Optional[List[str]] = None) -> None:
@@ -99,16 +88,13 @@ class DCOSMigrate(object):
             self.backup_list.load()
             return
 
-        logging.info("Calling {} Backup Batches".format(
-            len(self.pm.backup_batch)))
+        logging.info("Calling {} Backup Batches".format(len(self.pm.backup_batch)))
         for batch in self.pm.backup_batch:
             # each batch could also be executed in parallel.
             # But for now just start sequential
             for plugin in batch:
-                logging.info(
-                    "Calling backup for plugin {}".format(plugin.plugin_name))
-                blist = plugin.backup(
-                    client=self.client, backupList=self.backup_list)
+                logging.info("Calling backup for plugin {}".format(plugin.plugin_name))
+                blist = plugin.backup(client=self.client, backupList=self.backup_list)
                 if blist:
                     self.backup_list.extend(blist)
 
@@ -135,8 +121,7 @@ class DCOSMigrate(object):
             # each batch could also be executed in parallel.
             # But for not just start sequencial
             for plugin in batch:
-                mlist = plugin.migrate(
-                    backupList=self.backup_list, manifestList=self.manifest_list)
+                mlist = plugin.migrate(backupList=self.backup_list, manifestList=self.manifest_list)
                 if mlist:
                     self.manifest_list.extend(mlist)
 

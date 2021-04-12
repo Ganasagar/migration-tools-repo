@@ -4,37 +4,26 @@ with semi-independent fields into another JSON-serializable object.
 """
 
 from collections import namedtuple
-from typing import (
-    cast, Any, Callable, Dict, Iterator, List, Mapping, Optional, Tuple, TypeVar, Set, Union
-)
+from typing import (cast, Any, Callable, Dict, Iterator, List, Mapping, Optional, Tuple, TypeVar, Set, Union)
 
 
 class Translated(object):
     """
         A return value of mapper functions passed into `apply_mapping()`
     """
-
-    def __init__(
-        self, update: Optional[Dict[str, Any]] = None, warnings: Optional[List[str]] = None
-    ):
+    def __init__(self, update: Optional[Dict[str, Any]] = None, warnings: Optional[List[str]] = None):
         self.update: Dict[str, Any] = {} if update is None else update
         self.warnings: List[str] = [] if warnings is None else warnings
 
     def merged_with(self, other: 'Translated') -> 'Translated':
-        return Translated(
-            update=deep_merge(self.update, other.update),
-            warnings=self.warnings + other.warnings
-        )
+        return Translated(update=deep_merge(self.update, other.update), warnings=self.warnings + other.warnings)
 
 
 MappingKey = Union[str, Tuple[str, ...]]
 
 
-def apply_mapping(
-    mapping: Mapping[MappingKey, Callable[[Any], Translated]],
-    data: Mapping[str, Any],
-    error_location: str
-) -> Tuple[Dict[str, Any], List[str]]:
+def apply_mapping(mapping: Mapping[MappingKey, Callable[[Any], Translated]], data: Mapping[str, Any],
+                  error_location: str) -> Tuple[Dict[str, Any], List[str]]:
     """
     >>> mapper = lambda n: Translated({"outer": [{"inner": n*2}]})
     >>> result, _ = apply_mapping({"foo": mapper}, {"foo": 21}, "")
@@ -65,9 +54,7 @@ def apply_mapping(
     Exception: Bad translation result in "app" for key "foo"
 
     """
-    def map_group(
-        group: MappingKey, mapper: Callable[[Any], Translated]
-    ) -> Tuple[Set[str], Translated]:
+    def map_group(group: MappingKey, mapper: Callable[[Any], Translated]) -> Tuple[Set[str], Translated]:
         if isinstance(group, tuple):
             fields = set(group) & data.keys()
             return fields, mapper({field: data[field] for field in fields})
@@ -87,16 +74,14 @@ def apply_mapping(
         mapper = mapping[key]
         mapped_app_fields, translated = map_group(key, mapper)
         if not isinstance(translated, Translated):
-            raise Exception(
-                'Bad translation result in "{}" for key "{}"'.format(error_location, key))
+            raise Exception('Bad translation result in "{}" for key "{}"'.format(error_location, key))
 
         warnings += ['"{}": {}'.format(key, warn) for warn in translated.warnings]
 
         try:
             result = deep_merge(result, translated.update)
         except UpdateConflict as err:
-            raise Exception(
-                'Error composing the result object for "{}": {}'.format(error_location, err))
+            raise Exception('Error composing the result object for "{}": {}'.format(error_location, err))
 
         unknown -= mapped_app_fields
 
@@ -104,9 +89,8 @@ def apply_mapping(
         # We intentionally crash the script when unknown fields are discovered.
         # The fields that cannot or should not be mapped should be explicitly added
         # into the corresponding `generate_..._mappings()` function.
-        raise RuntimeError(
-            '"{}" has fields {} that are not present in the field mappings'.format(
-                error_location, ', '.join('"{}"'.format(_) for _ in sorted(unknown))))
+        raise RuntimeError('"{}" has fields {} that are not present in the field mappings'.format(
+            error_location, ', '.join('"{}"'.format(_) for _ in sorted(unknown))))
 
     return result, warnings
 
@@ -169,6 +153,7 @@ def deep_merge(first: T, second: T, debug_prefix: str = '') -> T:
     True
     """
     if all(isinstance(_, dict) for _ in (first, second)):
+
         def iter_items(first: Dict[str, Any], second: Dict[str, Any]) -> Iterator[Tuple[str, Any]]:
             for key in first.keys() - second.keys():
                 yield key, first[key]
@@ -181,13 +166,8 @@ def deep_merge(first: T, second: T, debug_prefix: str = '') -> T:
 
     if isinstance(first, List) and isinstance(second, List):
         min_len = min(len(first), len(second))
-        return cast(
-            T,
-            [
-                deep_merge(first[n], second[n], '{}[{}]'.format(debug_prefix, n))
-                for n in range(min_len)
-            ] + first[min_len:] + second[min_len:]
-        )
+        return cast(T, [deep_merge(first[n], second[n], '{}[{}]'.format(debug_prefix, n))
+                        for n in range(min_len)] + first[min_len:] + second[min_len:])
 
     if any(isinstance(_, ListExtension) for _ in (first, second)):
         base, extension = (first, second) if isinstance(second, ListExtension) else (second, first)
@@ -200,8 +180,7 @@ def deep_merge(first: T, second: T, debug_prefix: str = '') -> T:
     if first == second:
         return first
 
-    raise UpdateConflict(
-        'Conflicting values for {}: {} and {}'.format(debug_prefix, first, second))
+    raise UpdateConflict('Conflicting values for {}: {} and {}'.format(debug_prefix, first, second))
 
 
 def finalize_unmerged_list_extensions(merged: Any) -> Any:

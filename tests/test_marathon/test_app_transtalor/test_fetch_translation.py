@@ -3,6 +3,7 @@ import pytest
 from dcos_migrate.plugins.marathon import app_translator
 from .common import DummyAppSecretMapping
 
+
 def test_generated_fetch_layout():
     """
     Tests generation of volume and init container for `fetch`.
@@ -19,9 +20,9 @@ def test_generated_fetch_layout():
 
     fields = {"id": "app", "fetch": [{"uri": "http://foobar.baz/0xdeadbeef"}]}
 
-    result, warnings = app_translator.translate_app(fields, settings)
+    translated = app_translator.translate_app(fields, settings)
 
-    template_spec = result['spec']['template']['spec']
+    template_spec = translated.deployment['spec']['template']['spec']
 
     # The volume for fetching artifacts should be an empty dir.
     fetch_volume_name = template_spec['volumes'][0]['name']
