@@ -1,0 +1,31 @@
+#!/bin/bash
+DEPLOY_ID="$1"
+
+while true; do
+  echo "Waiting on deploy id ${DEPLOY_ID} to complete..." >&2
+
+  DEPLOYMENTS="$(dcos marathon deployment list 2>&1)"
+  STATUS="$?"
+
+  case "$STATUS" in
+    0)
+      if !(echo "$DEPLOYMENTS" | grep -q -v "${DEPLOY_ID}"); then
+        break
+      fi
+      ;; 
+
+    1)
+      if [ "$DEPLOYMENTS" == "There are no deployments" ]; then
+        break
+      fi
+      ;;
+    
+    *)
+      echo "Unexpect exit status $STATUS; retrying"
+      ;;
+  esac
+
+  sleep 5
+done
+
+echo "Deployment complete"

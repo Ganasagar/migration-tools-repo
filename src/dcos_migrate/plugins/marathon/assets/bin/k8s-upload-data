@@ -1,0 +1,26 @@
+#!/bin/bash
+
+. config.sh
+
+set -e -o pipefail
+
+POD_IDS=($(kubectl get pods --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}' -l app=${K8S_APP_ID} | sort))
+
+POD_IDX=0
+POD_COUNT=${#POD_IDS[@]}
+VOL_COUNT=${#MOUNT_NAMES[@]}
+
+for ((POD_IDX=0; POD_IDX<POD_COUNT; POD_IDX++)); do
+  POD_ID="${POD_IDS[$POD_IDX]}"
+
+  echo "Uploading files for ${POD_ID}"
+
+  for ((VOL_IDX=0; VOL_IDX < VOL_COUNT; VOL_IDX ++)); do
+    MOUNT_NAME="${MOUNT_NAMES[$VOL_IDX]}"
+    MOUNT_PATH="${MOUNT_PATHS[$VOL_IDX]}"
+    echo "Uploading mount '${MOUNT_NAME}' to $MOUNT_PATH"
+    kubectl cp target/download/${VOL_IDX}/${MOUNT_NAME}/ ${POD_ID}:$(dirname $MOUNT_PATH)
+  done
+done
+
+echo "All done!"

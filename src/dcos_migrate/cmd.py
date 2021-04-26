@@ -19,7 +19,11 @@ class DCOSMigrate(object):
             default="all",
             positional=True,
             help="phase to start with."),
-        Arg(name="verbose", alternatives=["-v"], action="count", default=0, help="log verbosity. Default to critical")
+        Arg(name="verbose",
+            alternatives=["-v"],
+            action="count",
+            default=1,
+            help="log verbosity. Default to critical and warnings")
     ]
 
     def __init__(self) -> None:
@@ -69,7 +73,7 @@ class DCOSMigrate(object):
         """handle global config before starting the process"""
         levels = [logging.CRITICAL, logging.WARNING, logging.INFO, logging.DEBUG]
 
-        v = self.pm.config['global'].get('verbose', 0)
+        v = self.pm.config['global'].get('verbose', 1)
         level = levels[min(len(levels) - 1, v)]
         logging.basicConfig(level=level, force=True)
 

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+. config.sh
+SCRIPT_FOLDER="$(dirname "$0")"
+
+set -e -o pipefail
+
+OUTPUT=$(dcos marathon app update "$APP_ID" version=$DCOS_ORIGINAL_APP_VERSION --force)
+
+if ! (echo "$OUTPUT" | grep -q "Created deployment"); then
+  echo "Deployment attempt failed with output ${OUTPUT}" >&2
+  exit 1
+fi
+
+DEPLOY_ID=$(echo "$OUTPUT" | cut -d ' ' -f 3)
+
+"${SCRIPT_FOLDER}/dcos-wait-for-deployment" $DEPLOY_ID

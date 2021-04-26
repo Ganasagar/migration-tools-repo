@@ -1,0 +1,42 @@
+#!/bin/bash
+
+. config.sh
+
+set -e -o pipefail
+
+TASK_IDS=($(dcos marathon task list -q $APP_ID | sort))
+
+TASK_IDX=0
+TASK_COUNT=${#TASK_IDS[@]}
+VOL_COUNT=${#MOUNT_NAMES[@]}
+ERRORS=()
+
+for ((TASK_IDX=0; TASK_IDX<TASK_COUNT; TASK_IDX++)); do
+  TASK_ID="${TASK_IDS[$TASK_IDX]}"
+
+  echo "Downloading files for ${TASK_ID}"
+
+  for ((VOL_IDX=0; VOL_IDX < VOL_COUNT; VOL_IDX ++)); do
+    MOUNT_NAME="${MOUNT_NAMES[$VOL_IDX]}"
+    echo "Downloading mount '${MOUNT_NAME}'"
+    if ! dcos task download "${TASK_ID}" "${MOUNT_NAME}" --target-dir target/download/${VOL_IDX}/; then
+       ERRORS+=$TASK_ID
+       echo "Error downloading state for TASK ${TASK_ID}"
+    fi
+  done
+done
+
+if [ ${#ERRORS[@]} = 0 ]; then
+  echo "Download complete"
+  exit 0
+else
+  
+  echo
+  echo "The following tasks reported an error during download:"
+  echo
+
+  for i in ${ERRORS[@]}; do
+    echo " - $i"
+  done
+  exit 1
+fi

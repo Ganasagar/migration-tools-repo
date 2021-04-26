@@ -1,0 +1,46 @@
+[{
+  "id": "/postgres",
+  "cpus": 1,
+  "instances": 1,
+  "mem": 512,
+  "networks": [ { "mode": "container/bridge" } ],
+  "container": {
+    "type": "DOCKER",
+    "volumes": [
+      {
+        "containerPath": "/var/lib/postgresql/data",
+        "hostPath": "data",
+        "mode": "RW"
+      },
+      {
+        "containerPath": "data",
+        "mode": "RW",
+        "persistent": {
+          "type": "mount",
+          "size": 512,
+          "maxSize": 1024,
+          "constraints": [["path", "LIKE", "/mnt/ssd-.+"]]
+        }
+      }
+    ],
+    "docker": {
+      "image": "postgres:latest"
+    },
+    "portMappings": [
+      {
+        "containerPort": 5432,
+        "hostPort": 0,
+        "protocol": "tcp",
+        "name": "postgres"
+      }
+    ]
+  },
+  "env": {
+    "POSTGRES_PASSWORD": "password",
+    "PGDATA": "pgdata"
+  },
+  "upgradeStrategy": {
+    "maximumOverCapacity": 0,
+    "minimumHealthCapacity": 0
+  }
+}]

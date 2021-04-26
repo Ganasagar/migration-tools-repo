@@ -38,7 +38,8 @@ def test_host_path_volumes():
                     "mode": "RO"
                 },
                 {
-                    "containerPath": "foo",
+                    "containerPath":
+                    "foo",  # we cannot fully translate this persistent volume because there is no mapping into the container
                     "persistent": {
                         "size": 1024,
                         "type": "root"
@@ -53,20 +54,18 @@ def test_host_path_volumes():
 
     template_spec = translated.deployment['spec']['template']['spec']
     volumes = sorted(template_spec['volumes'], key=lambda v: v['name'])
-    assert volumes == [
-        {
-            "name": "volume-0",
-            'hostPath': {
-                "path": "/volumes/rw"
-            }
-        },
-        {
-            "name": "volume-1",
-            'hostPath': {
-                "path": "/volumes/ro"
-            }
-        },
-    ]
+
+    assert volumes == [{
+        'name': 'volume-0',
+        'hostPath': {
+            'path': '/volumes/rw'
+        }
+    }, {
+        'name': 'volume-1',
+        'hostPath': {
+            'path': '/volumes/ro'
+        }
+    }]
 
     mounts = sorted(template_spec['containers'][0]['volumeMounts'], key=lambda v: v['name'])
     assert mounts == [

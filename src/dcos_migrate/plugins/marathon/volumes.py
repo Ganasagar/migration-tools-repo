@@ -1,6 +1,6 @@
 import abc
 from collections import defaultdict
-from typing import Any, Dict, Iterator, List, Mapping
+from typing import Any, Dict, Iterator, List, Mapping, Sequence, Set
 
 from .app_secrets import AppSecretMapping
 from .common import InvalidAppDefinition, main_container, pod_spec_update, try_oneline_dump
@@ -8,8 +8,47 @@ from .mapping_utils import ListExtension, Translated
 import dcos_migrate.utils as utils
 
 
+def get_volumes(app: Dict[str, Any]) -> Sequence[Dict[str, Any]]:
+    container: Dict[str, Any] = app.get('container', {})
+    return container.get('volumes', [])
+
+
+def is_resident(app: Dict[str, Any]) -> bool:
+    return any('persistent' in v for v in get_volumes(app))
+
+
+def volume_mount_name(volume_name: str) -> str:
+    return utils.make_label(volume_name)
+
+
+def translate_volume_claim_templates(app_name: str, volumes: Sequence[Dict[str, Any]]) -> Sequence[Dict[str, Any]]:
+    output: List[Dict[str, Any]] = []
+
+    for v in volumes:
+        if not 'persistent' in v:
+            continue
+        volume_name = volume_mount_name(v['containerPath'])
+        size = int(v['persistent']['size'])
+
+        output.append({
+            'metadata': {
+                'name': volume_name
+            },
+            'spec': {
+                'accessModes': ['ReadWriteOnce'],
+                'resources': {
+                    'requests': {
+                        'storage': str(size) + 'Mi'
+                    }
+                }
+            }
+        })
+
+    return output
+
+
 def translate_volumes(volumes: Iterator[Dict[str, Any]], app_secrets: AppSecretMapping) -> Translated:
-    mappers = [_HostPathVolumeMapper(), _SecretVolumeMapper(app_secrets)]
+    mappers = [_HostPathVolumeMapper(), _SecretVolumeMapper(app_secrets), _PersistentVolumeMapper(volumes)]
 
     result = Translated()
     for volume in volumes:
@@ -43,6 +82,67 @@ class _VolumeMapper(object):
         so that a warning can be emitted if no mapper could translate a volume.
         """
         pass
+
+
+def _is_sandbox_relative_path(path: str) -> bool:
+    return not path.startswith('/')
+
+
+class _PersistentVolumeMapper(_VolumeMapper):
+    def __init__(self, all_volumes: Iterator[Dict[str, Any]]) -> None:
+        super().__init__()
+        self._result = Translated()
+        self._index = 0
+        self.all_volumes = all_volumes
+        self.persistent_volume_names = [v['containerPath'] for v in self.all_volumes if v.get('persistent', None)]
+
+    def consume(self, volume: Dict[str, Any]) -> bool:
+        fields = volume.copy()
+
+        if 'persistent' in fields:
+            persistent_volume_name = volume['containerPath']
+            mapped_volume = [v for v in self.all_volumes if v.get('hostPath') == persistent_volume_name]
+            if len(mapped_volume) == 0:
+                # This persistent volume has no mapping, we cannot expose it
+                return False
+            else:
+                # This persistent volume has a mapping! But we don't actually do anything with it here. A persistentVolumeClaim is generated from it elsewhere.
+                return True
+
+        elif ('hostPath' in volume) and (_is_sandbox_relative_path(volume['hostPath'])):
+            fields = volume.copy()
+
+            try:
+                name = fields.pop('hostPath')
+                container_path = fields.pop('containerPath')
+                mode = fields.pop('mode')
+            except KeyError:
+                return False
+
+            if fields:
+                return False
+
+            if name in self.persistent_volume_names:
+                # There's a persistent volume to which we can map this!
+                mount = Translated(
+                    main_container({
+                        "volumeMounts":
+                        ListExtension([{
+                            "name": name,
+                            "mountPath": container_path,
+                            "readOnly": mode == "RO",
+                        }])
+                    }))
+                self._result = self._result.merged_with(mount)
+                return True
+            else:
+                return False
+        else:
+            # no persistent mapping
+            return False
+
+    def result(self) -> Translated:
+        return self._result
 
 
 class _HostPathVolumeMapper(_VolumeMapper):

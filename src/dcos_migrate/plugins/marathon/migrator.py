@@ -1,13 +1,15 @@
 from dcos_migrate.system import Manifest, ManifestList, Migrator, with_comment
 import dcos_migrate.utils as utils
 from kubernetes.client.models import V1Deployment, V1Service, V1ObjectMeta, V1Secret  # type: ignore
-from kubernetes.client import ApiClient  # type: ignore
+from kubernetes.client import ApiClient, V1StatefulSet  # type: ignore
 
 from .app_translator import ContainerDefaults, translate_app, Settings
 from .app_secrets import TrackingAppSecretMapping, SecretRemapping
 from .service_translator import translate_service
+from .stateful_copy import make_sleeper_stateful_set, configure_stateful_migrate
 
 import logging
+import sys
 from typing import Any, DefaultDict, Mapping, Optional, Set
 from collections import defaultdict
 
@@ -35,6 +37,11 @@ class V1ServiceWithComment(V1Service):  # type: ignore
 
 @with_comment
 class V1DeploymentWithComment(V1Deployment):  # type: ignore
+    pass
+
+
+@with_comment
+class V1StatefulSetWithComment(V1StatefulSet):  # type: ignore
     pass
 
 
@@ -75,7 +82,18 @@ class MarathonMigrator(Migrator):
         translated = translate_app(self.object, settings)
 
         kc = ApiClient()
-        dapp = kc._ApiClient__deserialize(translated.deployment, V1DeploymentWithComment)
+        if translated.deployment['kind'] == "StatefulSet":
+            sleeper_stateful_set = make_sleeper_stateful_set(translated.deployment)
+            dapp = kc._ApiClient__deserialize(sleeper_stateful_set, V1StatefulSetWithComment)
+            try:
+                configure_stateful_migrate(original_marathon_app=self.object,
+                                           k8s_translate_result=translated.deployment)
+            except:
+                print("Unexpected error while preparing Marathon stateful migration:", sys.exc_info()[0])
+                raise
+        else:
+            dapp = kc._ApiClient__deserialize(translated.deployment, V1DeploymentWithComment)
+
         dapp.set_comment(translated.warnings)
 
         self.manifest.append(dapp)

@@ -1,0 +1,70 @@
+#!/bin/sh
+
+DONE="✓"
+UNKNOWN="?"
+STARTED="…"
+
+
+report() {
+  
+
+  echo "\tname\tDC/OS state\tK8s state\tDownload\tUpload"
+
+  until [ -z "$1" ]; do
+    name="$(basename "$1")"
+    shift
+
+    prefix="$name/target/"
+    download_prefix="$prefix/dcos-downloaded"
+    upload_prefix="$prefix/k8s-uploaded"
+
+    if [ -f $download_prefix ]; then
+      download="$DONE"
+    elif [ -f $download_prefix.work ]; then
+      download="$STARTED"
+    else
+      download="$UNKNOWN"
+    fi
+
+    if [ -f "$upload_prefix" ]; then
+      upload="$DONE"
+    elif [ -f $upload_prefix.work ]; then
+      upload="$STARTED"
+    else
+      upload="$UNKNOWN"
+    fi
+
+    if [ -f "$prefix/k8s-resumed" ]; then
+      k8s_state="resumed"
+    elif [ -f $prefix/k8s-slept ]; then
+      k8s_state="slept"
+    elif [ -f $prefix/k8s-slept.work ] || [ -f $prefix/k8s-resumed.work ]; then
+      k8s_state="$STARTED"
+    else
+      k8s_state="$UNKNOWN"
+    fi
+
+    if [ -f "$prefix/dcos-resumed" ]; then
+      dcos_state="resumed"
+    elif [ -f $prefix/dcos-slept ]; then
+      dcos_state="slept"
+    elif [ -f $prefix/dcos-slept.work ] || [ -f $prefix/dcos-resumed.work ]; then
+      dcos_state="$STARTED"
+    else
+      dcos_state="$UNKNOWN"
+    fi
+    echo "\t${name}\t${dcos_state}\t${k8s_state}\t${download}\t${upload}"
+  done
+}
+
+report "$@" | column -t -s $'\t'
+
+cat <<EOF
+
+Legend:
+
+  $DONE - Task successfully completed (or marked as completed, manually)
+  $UNKNOWN - Task has not been started
+  $STARTED - Task has been started, but is either still running or has failed
+
+EOF
